@@ -7,7 +7,7 @@ from flask import Flask, request, redirect, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from database_init import db
-
+import os
 
 app = Flask(__name__)
 
@@ -19,7 +19,6 @@ app.secret_key = "digital_civic_secret"
 db.init_app(app)
 #db = SQLAlchemy(app)
 
-print("Hello world")
 
 
 
