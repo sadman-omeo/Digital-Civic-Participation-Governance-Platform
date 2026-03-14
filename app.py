@@ -7,6 +7,7 @@ from flask import Flask, request, redirect, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from database_init import db
+import os
 
 
 app = Flask(__name__)
@@ -15,8 +16,10 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///voting_system.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.secret_key = "digital_civic_secret"
+app.config["UPLOAD_FOLDER"] = "static/uploads"
 
 db.init_app(app)
+os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 #db = SQLAlchemy(app)
 
 
@@ -25,7 +28,11 @@ db.init_app(app)
 
 #call routes here:
 
+from routes.candidate_routes import c_bp
+app.register_blueprint(c_bp)
 
+from routes.complaint_routes import complaint_bp
+app.register_blueprint(complaint_bp)
 
 
 
