@@ -19,7 +19,7 @@ app.secret_key = "digital_civic_secret"
 db.init_app(app)
 #db = SQLAlchemy(app)
 
-
+print("Hello world")
 
 
 
