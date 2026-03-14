@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Government Service Request System</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    
+    <div class="container py-5">
+        <div class="text-center mb-5">
+            <h1 class="fw-bold">Digital Civic Participation and Governance Platform</h1>
+            <p class="text-muted">Module 2 - Government Service Request System</p>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-5">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <h3 class="mb-4">Submit a Service Request</h3>
+
+                        <form action="/service_requests/add_service_request" method="POST">
+                            <div class="mb-3">
+                                <label for="citizen_name" class="form-label">Citizen Name</label>
+                                <input type="text" class="form-control" id="citizen_name" name="citizen_name" placeholder="Enter your name" required>
+                                <label for="citizen_email" class="form-label">Citizen Email</label>
+                                <input type="email" class="form-control" id="citizen_email" name="citizen_email" placeholder="Enter your email" required>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="service_type" class="form-label">Service Type</label>
+                                <select class="form-select" id="service_type" name="service_type" required>
+                                    <option value="">Select a service</option>
+                                    <option value="Birth Certificate">Birth Certificate</option>
+                                    <option value="National ID Application">National ID Application</option>
+                                    <option value="Trade License">Trade License</option>
+                                    <option value="Tax Clearance">Tax Clearance</option>
+                                    <option value="National ID Correction">National ID Correction</option>
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="description" class="form-label">Description</label>
+                                <textarea class="form-control" id="description" name="description" rows="4" placeholder="Write your request details" required></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">Submit Request</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-7">
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-4">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h3 class="mb-0">Submitted Requests</h3>
+                            <span class="badge bg-primary">{{ requests|length }} Requests</span>
+                        </div>
+
+                        {% if requests %}
+                            <div class="table-responsive">
+                                <table class="table table-bordered table-hover align-middle">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Citizen Name</th>
+                                            <th>Citizen Email</th>
+                                            <th>Service Type</th>
+                                            <th>Description</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for req in requests %}
+                                        <tr>
+                                            <td>{{ req.id }}</td>
+                                            <td>{{ req.citizen_name }}</td>
+                                            <td>{{ req.citizen_email }}</td>
+                                            <td>{{ req.service_type }}</td>
+                                            <td>{{ req.description }}</td>
+                                            <td>
+                                                {% if req.status == "Submitted" %}
+                                                    <span class="badge bg-secondary">{{ req.status }}</span>
+                                                {% elif req.status == "Under Review" %}
+                                                    <span class="badge bg-warning text-dark">{{ req.status }}</span>
+                                                {% elif req.status == "Approved" %}
+                                                    <span class="badge bg-success">{{ req.status }}</span>
+                                                {% elif req.status == "Completed" %}
+                                                    <span class="badge bg-primary">{{ req.status }}</span>
+                                                {% else %}
+                                                    <span class="badge bg-dark">{{ req.status }}</span>
+                                                {% endif %}
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="alert alert-secondary mb-0">
+                                No service requests submitted yet.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

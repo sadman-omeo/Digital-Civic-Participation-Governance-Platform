@@ -24,7 +24,9 @@ db.init_app(app)
 
 #call routes here:
 
-
+#service request routes
+from routes.service_request_routes import s_bp
+app.register_blueprint(s_bp)
 
 
 
