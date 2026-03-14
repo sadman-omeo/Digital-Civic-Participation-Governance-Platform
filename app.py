@@ -28,7 +28,9 @@ db.init_app(app)
 from routes.service_request_routes import s_bp
 app.register_blueprint(s_bp)
 
-
+#election creation routes
+from routes.election_creation_routes import e_bp
+app.register_blueprint(e_bp)
 
 
 
