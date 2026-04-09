@@ -1,28 +1,45 @@
-# ============================================================
-#  Lab 04 | Voter Support System - Flask
-#  Student ID : 23301111
-#  Features   : 1) AI Chatbot for Voter Support  2) "I Voted" Virtual Sticker
-#  Port       : 1111
-# ============================================================
+#Install the required Python packages
+# pip install flask
+# pip install flask_sqlalchemy
+# pip install sqlalchemy
 
-from flask import Flask
-from routes import ui_bp, chat_bp, vote_bp
+from flask import Flask, request, redirect, jsonify, render_template
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
+from database_init import db
 
-# Create Flask application
+
 app = Flask(__name__)
-app.secret_key = "secret_23301111"
 
-# Register blueprints
-app.register_blueprint(ui_bp)
-app.register_blueprint(chat_bp)
-app.register_blueprint(vote_bp)
+# Database Configuration
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///voting_system.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.secret_key = "digital_civic_secret"
+
+db.init_app(app)
+#db = SQLAlchemy(app)
 
 
-# ════════════════════════════════════════════════════════════
-#  MAIN
-# ════════════════════════════════════════════════════════════
 
+
+
+#call routes here:
+
+
+
+
+
+
+
+
+# Create Database Tables
+with app.app_context():
+    db.create_all()
+
+
+
+
+
+# Run the App
 if __name__ == "__main__":
-    app.run(debug=True, port=1111)
-
-
+    app.run(debug=True, port = 1234)
