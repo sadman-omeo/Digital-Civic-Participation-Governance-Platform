@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Vote</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="nav-brand">🏛️ CivicApp &nbsp;<span class="id-badge">NID: 23301111</span></div>
+    <div class="nav-links">
+      <a href="/">Home</a>
+      <a href="/chatbot">AI Chatbot</a>
+      <a href="/vote" class="active">Vote</a>
+    </div>
+  </nav>
+
+  <!-- VOTING FORM -->
+  <div class="vote-wrapper" id="voteSection">
+    <h1>🗳️ Cast Your Vote</h1>
+    <p class="subtitle">Your vote is your voice — make it count! 💪</p>
+
+    <div class="vote-form-card">
+      <label for="voterId">Voter ID (your name or unique ID)</label>
+      <input type="text" id="voterId" placeholder="e.g. voter_001" required/>
+
+      <label>Select Candidate</label>
+      <div class="candidate-grid" id="candidateGrid">
+        <!-- Populated by JS -->
+      </div>
+
+      <button class="btn btn-accent" id="voteBtn" onclick="submitVote()">
+        🗳️ Submit Vote
+      </button>
+    </div>
+  </div>
+
+  <!-- I VOTED STICKER (hidden until vote is cast) -->
+  <div class="sticker-section hidden" id="stickerSection">
+    <div class="sticker-container">
+      <div class="sticker" id="stickerSVG"></div>
+      <h2 id="stickerTitle">I Voted! 🎉</h2>
+      <p id="stickerCaption"></p>
+
+      <div class="share-buttons">
+        <a id="twitterShare" href="#" target="_blank" class="btn btn-twitter">🐦 Share on Twitter</a>
+        <a id="facebookShare" href="#" target="_blank" class="btn btn-facebook">📘 Share on Facebook</a>
+        <button class="btn btn-primary" onclick="downloadSticker()">⬇️ Download Sticker</button>
+      </div>
+
+      <div class="vote-again-msg">
+        <p>Encourage your friends to vote too! Share your sticker everywhere. 📲</p>
+        <a href="/vote" class="btn-sm">🔄 Return to Home</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- LIVE STATS -->
+  <div class="stats-section">
+    <h2>📊 Live Voting Statistics</h2>
+    <div id="statsGrid" class="stats-grid">Loading…</div>
+    <button class="btn-sm" onclick="loadStats()">🔄 Refresh</button>
+  </div>
+
+  <footer>
+  <p>&copy; 2026 CivicApp. All rights reserved.</p>
+  </footer>
+
+  <script>
+    let selectedCandidate = null;
+
+    // ── Load candidates ──────────────────────────────────────
+    async function loadCandidates() {
+      const res  = await fetch("/api/candidates");
+      const data = await res.json();
+      const grid = document.getElementById("candidateGrid");
+      grid.innerHTML = "";
+      data.candidates.forEach(c => {
+        const btn = document.createElement("button");
+        btn.className   = "candidate-btn";
+        btn.textContent = c;
+        btn.onclick     = () => selectCandidate(btn, c);
+        grid.appendChild(btn);
+      });
+    }
+
+    function selectCandidate(btn, name) {
+      document.querySelectorAll(".candidate-btn").forEach(b => b.classList.remove("selected"));
+      btn.classList.add("selected");
+      selectedCandidate = name;
+    }
+
+    // ── Submit vote ──────────────────────────────────────────
+    async function submitVote() {
+      const voterId = document.getElementById("voterId").value.trim();
+      if (!voterId)            return alert("Please enter your Voter ID.");
+      if (!selectedCandidate)  return alert("Please select a candidate.");
+
+      document.getElementById("voteBtn").disabled    = true;
+      document.getElementById("voteBtn").textContent = "Submitting…";
+
+      try {
+        const res  = await fetch("/api/vote", {
+          method : "POST",
+          headers: { "Content-Type": "application/json" },
+          body   : JSON.stringify({ voter_id: voterId, candidate: selectedCandidate })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+          showSticker(voterId);
+          loadStats();
+        } else {
+          alert("⚠️ " + (data.error || "Something went wrong."));
+          document.getElementById("voteBtn").disabled    = false;
+          document.getElementById("voteBtn").textContent = "🗳️ Submit Vote";
+        }
+      } catch (err) {
+        alert("Network error. Is Flask running on port 1111?");
+        document.getElementById("voteBtn").disabled    = false;
+        document.getElementById("voteBtn").textContent = "🗳️ Submit Vote";
+      }
+    }
+
+    // ── Show sticker ─────────────────────────────────────────
+    async function showSticker(voterId) {
+      const res  = await fetch(`/api/sticker?voter_id=${encodeURIComponent(voterId)}`);
+      const data = await res.json();
+
+      document.getElementById("voteSection").classList.add("hidden");
+      const sec = document.getElementById("stickerSection");
+      sec.classList.remove("hidden");
+
+      document.getElementById("stickerSVG").innerHTML     = data.sticker_svg;
+      document.getElementById("stickerTitle").textContent = data.sticker_title;
+      document.getElementById("stickerCaption").textContent = data.share_caption;
+      document.getElementById("twitterShare").href        = data.social_links.twitter;
+      document.getElementById("facebookShare").href       = data.social_links.facebook;
+
+      // Celebration animation
+      sec.style.animation = "fadeIn 1s ease-in-out";
+    }
+
+    // ── Download sticker (SVG) ────────────────────────────────
+    function downloadSticker() {
+      const svgEl = document.querySelector("#stickerSVG svg");
+      if (!svgEl) return;
+      const blob = new Blob([svgEl.outerHTML], { type: "image/svg+xml" });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement("a");
+      a.href     = url;
+      a.download = "IVoted_Sticker.svg";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // ── Load stats ────────────────────────────────────────────
+    async function loadStats() {
+      const res  = await fetch("/api/vote/stats");
+      const data = await res.json();
+      const grid = document.getElementById("statsGrid");
+      grid.innerHTML = "";
+
+      data.candidates.forEach(c => {
+        const card = document.createElement("div");
+        card.className = "stat-card";
+        card.innerHTML = `
+          <h3>${c.candidate}</h3>
+          <div class="stat-bar-wrap">
+            <div class="stat-bar" style="width:${c.percentage}%"></div>
+          </div>
+          <p>${c.votes} votes &nbsp;(${c.percentage}%)</p>`;
+        grid.appendChild(card);
+      });
+
+      const total = document.createElement("p");
+      total.className   = "total-votes";
+      total.textContent = `Total Votes: ${data.total_votes}`;
+      grid.appendChild(total);
+    }
+
+    // ── Init ──────────────────────────────────────────────────
+    loadCandidates();
+    loadStats();
+    setInterval(loadStats, 10000); // auto-refresh every 10s
+  </script>
+</body>
+</html>
