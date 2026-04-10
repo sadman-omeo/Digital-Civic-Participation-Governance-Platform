@@ -41,7 +41,9 @@ app.register_blueprint(e_bp)
 from routes.auth import auth_bp
 app.register_blueprint(auth_bp)
 
-
+#admin can see voter details
+from routes.admin import admin_bp
+app.register_blueprint(admin_bp)
 
 
 # Create Database Tables

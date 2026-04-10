@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Voters</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/allvoter.css">
+</head>
+<body>
+
+<div class="container pb-5">
+    <div class="row mt-5 align-items-center">
+        <div class="col-md-7">
+            <h2 class="fw-bold">Voter Records</h2>
+        </div>
+        <div class="col-md-5">
+          
+            <input type="text" id="voterSearch" class="form-control search-input" name="search" placeholder="Search by NID or Name...">
+          
+        </div>
+    </div>
+
+    <div class="voter-container shadow-sm">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle" id="voterTable">
+                <thead>
+                    <tr style="border-bottom: 2px solid #007bff;">
+                        <th>Name</th>
+                        <th>NID</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for voter in voters %}
+                    <tr>
+                        <td><strong>{{ voter.Name }}</strong></td>
+                        <td>{{ voter.NID }}</td>
+                        <td>{{ voter.Email }}</td>
+                        <td>{{ voter.Phone }}</td>
+                        <td>{{ voter.role }}</td>
+                        <td>
+                            {% if voter.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <div class="btn-group btn-group-sm">
+                                
+                                <a href="/admin/voter/{{ voter.NID }}/edit" class="btn btn-outline-blue">Update</a>
+
+                                {% if voter.is_active %}
+                                <form action="/admin/voter/{{ voter.NID }}/deactivate" method="POST" style="display:inline;">
+                                    <button type="submit" class="btn btn-outline-blue">Deactivate</button>
+                                </form>
+                                {% else %}
+                                <form action="/admin/voter/{{ voter.NID }}/deactivate" method="POST" style="display:inline;">
+                                    <button type="submit" class="btn btn-outline-blue">Activate</button>
+                                </form>
+                                {% endif %}
+                                
+
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('voterSearch').addEventListener('keyup', function() {
+        let filter = this.value.toLowerCase();
+        let rows = document.querySelectorAll('#voterTable tbody tr');
+        
+        rows.forEach(row => {
+            let content = row.innerText.toLowerCase();
+            row.style.display = content.includes(filter) ? '' : 'none';
+        });
+    });
+</script>
+
+</body>
+</html>
