@@ -3,14 +3,23 @@
 {% block content %}
 
 <div class="row g-4">
+    <div class="col-12">
+        <div class="card card-smooth p-4 mb-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
+                <div>
+                    <h1 class="section-title mb-2">Service Requests</h1>
+                    <p class="page-intro">Submit citizen service requests and review pending requests from one clean interface.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="col-lg-5">
-        <div class="card shadow-sm border-0">
+        <div class="card card-smooth">
             <div class="card-body p-4">
                 <h3 class="mb-4">Submit a Service Request</h3>
 
-                <form action="/service_requests/add_service_request" method="POST">
-
+                <form action="{{ url_for('s_bp.add_service_request') }}" method="POST">
                     <div class="mb-3">
                         <label class="form-label">Citizen Name</label>
                         <input type="text" class="form-control mb-3" name="citizen_name" required>
@@ -36,59 +45,53 @@
                         <textarea class="form-control" name="description" rows="4" required></textarea>
                     </div>
 
-                    <button type="submit" class="btn btn-primary w-100">
-                        Submit Request
-                    </button>
+                    <button type="submit" class="btn btn-primary w-100">Submit Request</button>
                 </form>
             </div>
         </div>
     </div>
 
     <div class="col-lg-7">
-        <div class="card shadow-sm border-0">
+        <div class="card card-smooth">
             <div class="card-body p-4">
-
-                <div class="d-flex justify-content-between mb-4">
-                    <h3>Submitted Requests</h3>
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0">Submitted Requests</h3>
                     <span class="badge bg-primary">{{ requests|length }} Requests</span>
                 </div>
 
                 {% if requests %}
-                <table class="table table-bordered table-hover">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>ID</th>
-                            <th>Name</th>
-                            <th>Email</th>
-                            <th>Service</th>
-                            <th>Description</th>
-                            <th>Status</th>
-                        </tr>
-                    </thead>
-
-                    <tbody>
-                        {% for req in requests %}
-                        <tr>
-                            <td>{{ req.id }}</td>
-                            <td>{{ req.citizen_name }}</td>
-                            <td>{{ req.citizen_email }}</td>
-                            <td>{{ req.service_type }}</td>
-                            <td>{{ req.description }}</td>
-                            <td>{{ req.status }}</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-                {% else %}
-                    <div class="alert alert-secondary text-center">
-                        No service requests submitted yet.
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Service</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in requests %}
+                                    <tr>
+                                        <td>{{ req.id }}</td>
+                                        <td>{{ req.citizen_name }}</td>
+                                        <td>{{ req.citizen_email }}</td>
+                                        <td>{{ req.service_type }}</td>
+                                        <td>{{ req.description }}</td>
+                                        <td>{{ req.status }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
                     </div>
+                {% else %}
+                    <div class="alert alert-secondary text-center mb-0">No service requests submitted yet.</div>
                 {% endif %}
-
             </div>
         </div>
     </div>
-
 </div>
 
 {% endblock %}

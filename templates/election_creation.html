@@ -2,169 +2,90 @@
 
 {% block content %}
 
-<div class="container">
-
-    <div class="row g-4">
-
-        <!-- LEFT SIDE : CREATE ELECTION -->
-        <div class="col-lg-5">
-
-            <div class="card shadow-sm border-0">
-
-                <div class="card-body p-4">
-
-                    <h3 class="mb-4">Create New Election</h3>
-
-                    <form action="{{ url_for('e_bp.add_election') }}" method="POST">
-
-                        <div class="mb-3">
-                            <label class="form-label">Election Title</label>
-
-                            <input
-                                type="text"
-                                class="form-control"
-                                name="title"
-                                placeholder="Enter election title"
-                                required>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Description</label>
-
-                            <textarea
-                                class="form-control"
-                                name="description"
-                                rows="3"
-                                placeholder="Enter election description"
-                                required></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Deadline</label>
-
-                            <input
-                                type="datetime-local"
-                                class="form-control"
-                                name="deadline"
-                                required>
-                        </div>
-
-                        <div class="mb-3">
-
-                            <label class="form-label">Voting Options</label>
-
-                            <input
-                                type="text"
-                                class="form-control mb-2"
-                                name="option1"
-                                placeholder="Option 1"
-                                required>
-
-                            <input
-                                type="text"
-                                class="form-control mb-2"
-                                name="option2"
-                                placeholder="Option 2"
-                                required>
-
-                            <input
-                                type="text"
-                                class="form-control mb-2"
-                                name="option3"
-                                placeholder="Option 3">
-
-                            <input
-                                type="text"
-                                class="form-control mb-2"
-                                name="option4"
-                                placeholder="Option 4">
-
-                        </div>
-
-                        <button
-                            type="submit"
-                            class="btn btn-primary w-100">
-                            Create Election
-                        </button>
-
-                    </form>
-
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card card-smooth p-4 mb-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
+                <div>
+                    <h1 class="section-title mb-2">Election Management</h1>
+                    <p class="page-intro">Create voting events, review active elections, and keep track of deadlines in one centralized dashboard.</p>
                 </div>
-
             </div>
-
         </div>
+    </div>
 
+    <div class="col-lg-5">
+        <div class="card card-smooth">
+            <div class="card-body p-4">
+                <h3 class="mb-4">Create New Election</h3>
 
-        <!-- RIGHT SIDE : CREATED ELECTIONS -->
-
-        <div class="col-lg-7">
-
-            <div class="card shadow-sm border-0">
-
-                <div class="card-body p-4">
-
-                    <div class="d-flex justify-content-between align-items-center mb-4">
-
-                        <h3 class="mb-0">Created Elections</h3>
-
-                        <span class="badge bg-primary">
-                            {{ elections|length }} Elections
-                        </span>
-
+                <form action="{{ url_for('e_bp.add_election') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Election Title</label>
+                        <input type="text" class="form-control" name="title" placeholder="Enter election title" required>
                     </div>
 
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3" placeholder="Enter election description" required></textarea>
+                    </div>
 
-                    {% if elections %}
+                    <div class="mb-3">
+                        <label class="form-label">Deadline</label>
+                        <input type="datetime-local" class="form-control" name="deadline" required>
+                    </div>
 
-                        <div class="table-responsive">
+                    <div class="mb-3">
+                        <label class="form-label">Voting Options</label>
+                        <input type="text" class="form-control mb-2" name="option1" placeholder="Option 1" required>
+                        <input type="text" class="form-control mb-2" name="option2" placeholder="Option 2" required>
+                        <input type="text" class="form-control mb-2" name="option3" placeholder="Option 3">
+                        <input type="text" class="form-control mb-2" name="option4" placeholder="Option 4">
+                    </div>
 
-                            <table class="table table-bordered table-hover align-middle">
+                    <button type="submit" class="btn btn-primary w-100">Create Election</button>
+                </form>
+            </div>
+        </div>
+    </div>
 
-                                <thead class="table-dark">
-                                    <tr>
-                                        <th>ID</th>
-                                        <th>Title</th>
-                                        <th>Description</th>
-                                        <th>Deadline</th>
-                                    </tr>
-                                </thead>
+    <div class="col-lg-7">
+        <div class="card card-smooth">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0">Created Elections</h3>
+                    <span class="badge bg-primary">{{ elections|length }} Elections</span>
+                </div>
 
-                                <tbody>
-
-                                    {% for election in elections %}
-
+                {% if elections %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Title</th>
+                                    <th>Description</th>
+                                    <th>Deadline</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for election in elections %}
                                     <tr>
                                         <td>{{ election.id }}</td>
                                         <td>{{ election.title }}</td>
                                         <td>{{ election.description }}</td>
                                         <td>{{ election.deadline }}</td>
                                     </tr>
-
-                                    {% endfor %}
-
-                                </tbody>
-
-                            </table>
-
-                        </div>
-
-                    {% else %}
-
-                        <div class="alert alert-secondary mb-0">
-                            No elections created yet.
-                        </div>
-
-                    {% endif %}
-
-                </div>
-
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-secondary mb-0">No elections created yet.</div>
+                {% endif %}
             </div>
-
         </div>
-
     </div>
-
 </div>
 
 {% endblock %}

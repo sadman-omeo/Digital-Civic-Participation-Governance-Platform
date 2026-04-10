@@ -1,4 +1,4 @@
-from flask import Blueprint, redirect, request, jsonify, render_template
+from flask import Blueprint, redirect, request, jsonify, render_template, flash, url_for
 from database_init import db
 from models.service_request import ServiceRequest
 
@@ -11,7 +11,6 @@ def service_requests_page():
     return render_template("service_request.html", requests=requests)
 
 
-
 # POST - Create request [POST]
 @s_bp.route("/add_service_request", methods=["POST"])
 def add_service_request():
@@ -20,8 +19,9 @@ def add_service_request():
     service_type = request.values.get("service_type")
     description = request.values.get("description")
 
-    if not citizen_name or not service_type or not description:
-        return "All fields are required", 400
+    if not citizen_name or not citizen_email or not service_type or not description:
+        flash("All fields are required.", "warning")
+        return redirect(url_for("s_bp.service_requests_page"))
 
     new_req = ServiceRequest(
         citizen_name=citizen_name,
@@ -29,13 +29,12 @@ def add_service_request():
         service_type=service_type,
         description=description
     )
-    
 
     db.session.add(new_req)
     db.session.commit()
-    return redirect("/service_requests")
-    #return jsonify("/service_requests")
-    #return jsonify({"message" : "Service request created!"}, 201)
+
+    flash("Service request submitted successfully.", "success")
+    return redirect(url_for("s_bp.service_requests_page"))
 
 
 

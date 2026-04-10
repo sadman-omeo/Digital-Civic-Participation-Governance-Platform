@@ -27,7 +27,7 @@ db.init_app(app)
 #homepage route
 @app.route("/")
 def home():
-    return "this is home page"
+    return render_template("home.html")
 
 #service request routes
 from routes.service_request_routes import s_bp
