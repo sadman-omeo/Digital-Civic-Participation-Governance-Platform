@@ -45,6 +45,10 @@ app.register_blueprint(auth_bp)
 from routes.admin import admin_bp
 app.register_blueprint(admin_bp)
 
+#token generation routes
+from routes.token import token_bp
+app.register_blueprint(token_bp)
+
 
 # Create Database Tables
 with app.app_context():
