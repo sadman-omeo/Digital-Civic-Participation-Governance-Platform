@@ -24,6 +24,11 @@ db.init_app(app)
 
 #call routes here:
 
+#homepage route
+@app.route("/")
+def home():
+    return "this is home page"
+
 #service request routes
 from routes.service_request_routes import s_bp
 app.register_blueprint(s_bp)
@@ -31,6 +36,10 @@ app.register_blueprint(s_bp)
 #election creation routes
 from routes.election_creation_routes import e_bp
 app.register_blueprint(e_bp)
+
+#signup routes
+from routes.auth import auth_bp
+app.register_blueprint(auth_bp)
 
 
 
