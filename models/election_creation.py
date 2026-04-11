@@ -27,3 +27,4 @@ class VotingOption(db.Model):
         db.ForeignKey("election_creation.id"),
         nullable=False
     )
+    vote_count = db.Column(db.Integer, default=0, nullable=False)
