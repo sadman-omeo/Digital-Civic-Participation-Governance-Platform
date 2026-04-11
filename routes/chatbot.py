@@ -2,8 +2,8 @@
 #  Chatbot Routes - AI Assistant Endpoints
 # ============================================================
 
-from flask import Blueprint, request, jsonify
-from models import ChatbotService, ChatModel
+from flask import Blueprint, request, jsonify, render_template
+from models.chatbot import ChatbotService, ChatModel
 
 # Initialize chatbot blueprint
 chat_bp = Blueprint('chat', __name__, url_prefix='/api/chat')
@@ -54,6 +54,11 @@ def chat():
         "bot_reply": bot_reply,
         "timestamp": chat_model.sessions[session_id].messages[-1]["timestamp"]
     }), 200
+
+
+@chat_bp.route("/chatbot", methods=["GET"])
+def chatbot_page():
+    return render_template("chatbot.html")
 
 
 @chat_bp.route("/history", methods=["GET"])

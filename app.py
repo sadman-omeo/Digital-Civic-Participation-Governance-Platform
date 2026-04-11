@@ -63,6 +63,11 @@ app.register_blueprint(complaint_bp)
 from routes.vote_flow import vote_flow_bp
 app.register_blueprint(vote_flow_bp)
 
+#chatbot route
+from routes.chatbot import chat_bp
+app.register_blueprint(chat_bp)
+
+
 
 # Create Database Tables
 with app.app_context():
