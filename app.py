@@ -7,7 +7,7 @@ from flask import Flask, request, redirect, jsonify, render_template
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from database_init import db
-
+import os
 
 app = Flask(__name__)
 
@@ -22,14 +22,32 @@ db.init_app(app)
 
 
 
-
 #call routes here:
 
+#homepage route
+@app.route("/")
+def home():
+    return render_template("home.html")
 
+#service request routes
+from routes.service_request_routes import s_bp
+app.register_blueprint(s_bp)
 
+#election creation routes
+from routes.election_creation_routes import e_bp
+app.register_blueprint(e_bp)
 
+#signup routes
+from routes.auth import auth_bp
+app.register_blueprint(auth_bp)
 
+#admin can see voter details
+from routes.admin import admin_bp
+app.register_blueprint(admin_bp)
 
+#token generation routes
+from routes.token import token_bp
+app.register_blueprint(token_bp)
 
 
 # Create Database Tables
