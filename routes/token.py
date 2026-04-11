@@ -30,6 +30,9 @@ def generate_token():
         expires_at_aware = existing_token.expires_at.replace(tzinfo=timezone.utc)
         if expires_at_aware > datetime.now(timezone.utc):
             active_token = existing_token
+        else:
+            db.session.delete(existing_token)
+            db.session.commit()
 
    
     if request.method == "POST":
