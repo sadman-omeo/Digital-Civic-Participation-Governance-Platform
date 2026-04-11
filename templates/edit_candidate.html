@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-xl-6 col-lg-8">
+        <div class="card card-smooth">
+            <div class="card-body p-4">
+                <h1 class="section-title mb-3">Edit Candidate</h1>
+                <p class="page-intro mb-4">Update candidate details, change the election category, or replace the profile image.</p>
+
+                <form action="{{ url_for('c_bp.update_candidate', candidate_id=candidate.id) }}" method="POST" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Candidate Name</label>
+                        <input type="text" name="name" class="form-control" value="{{ candidate.name }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Election Category</label>
+                        <input type="text" name="category" class="form-control" value="{{ candidate.category }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea name="description" class="form-control" rows="3">{{ candidate.description }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">New Image</label>
+                        <input type="file" name="image" class="form-control">
+                    </div>
+
+                    {% if candidate.image %}
+                        <div class="mb-4">
+                            <p class="mb-2">Current Image</p>
+                            <img src="{{ url_for('static', filename='uploads/' + candidate.image) }}" class="rounded-4" width="120" height="120" style="object-fit: cover;">
+                        </div>
+                    {% endif %}
+
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button type="submit" class="btn btn-success">Update Candidate</button>
+                        <a href="{{ url_for('c_bp.candidates_page') }}" class="btn btn-secondary">Back</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

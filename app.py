@@ -15,8 +15,10 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///voting_system.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.secret_key = "digital_civic_secret"
+app.config["UPLOAD_FOLDER"] = "static/uploads"
 
 db.init_app(app)
+os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 #db = SQLAlchemy(app)
 
 
@@ -48,6 +50,16 @@ app.register_blueprint(admin_bp)
 #token generation routes
 from routes.token import token_bp
 app.register_blueprint(token_bp)
+
+#candidate management routes
+from routes.candidate_routes import c_bp
+app.register_blueprint(c_bp)
+
+#complaint management routes
+from routes.complaint_routes import complaint_bp
+app.register_blueprint(complaint_bp)
+
+
 
 
 # Create Database Tables
