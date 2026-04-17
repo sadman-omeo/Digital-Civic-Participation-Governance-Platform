@@ -1,4 +1,3 @@
-# routes/election_creation_routes.py
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 from database_init import db
 from models.election_creation import ElectionCreation, VotingOption
@@ -16,6 +15,7 @@ def election_creation_page():
 def add_election():
     title = request.form.get("title")
     description = request.form.get("description")
+    start_time = request.form.get("start_time")  # added
     deadline = request.form.get("deadline")
 
     option1 = request.form.get("option1")
@@ -23,8 +23,8 @@ def add_election():
     option3 = request.form.get("option3")
     option4 = request.form.get("option4")
 
-    if not title or not description or not deadline:
-        return "Title, description, and deadline are required", 400
+    if not title or not description or not start_time or not deadline:  # changed
+        return "Title, description, start time, and deadline are required", 400  # changed
 
     if not option1 or not option2:
         return "At least two options are required", 400
@@ -32,6 +32,7 @@ def add_election():
     new_election = ElectionCreation(
         title=title,
         description=description,
+        start_time=start_time,  # added
         deadline=deadline
     )
 

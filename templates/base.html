@@ -127,7 +127,7 @@
     <div class="topbar">
         <span class="brand">Digital Civic Participation & Governance</span>
         <div class="d-none d-lg-flex gap-3 align-items-center text-white-75">
-            <span>Secure voting and service workflows</span>
+            <span>Your country, your rights!</span>
         </div>
     </div>
 
@@ -139,6 +139,12 @@
         <a href="{{ url_for('complaint_bp.complaints_page') }}">Complaints</a>
         <a href="{{ url_for('chat.chatbot_page') }}">Chatbot</a>
         <a href="{{ url_for('vote_flow.election_select') }}">Vote Casting</a>
+        <a href="{{ url_for('notification_bp.notifications_page') }}">
+            Notifications
+            {% if unread_notification_count > 0 %}
+                <span class="badge bg-warning text-dark ms-2">{{ unread_notification_count }}</span>
+            {% endif %}
+        </a>
         <a href="{{ url_for('auth.login') }}">Login</a>
         <a href="{{ url_for('auth.signup') }}">Sign Up</a>
     </div>
