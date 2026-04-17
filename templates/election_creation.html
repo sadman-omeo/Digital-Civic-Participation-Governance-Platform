@@ -41,11 +41,37 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label">Voting Options</label>
-                        <input type="text" class="form-control mb-2" name="option1" placeholder="Option 1" required>
-                        <input type="text" class="form-control mb-2" name="option2" placeholder="Option 2" required>
-                        <input type="text" class="form-control mb-2" name="option3" placeholder="Option 3">
-                        <input type="text" class="form-control mb-2" name="option4" placeholder="Option 4">
+                        <label class="form-label">Voting Options (choose candidates)</label>
+                        {% if candidates %}
+                            <select class="form-select mb-2" name="option1" required>
+                                <option value="">Select candidate for option 1</option>
+                                {% for candidate in candidates %}
+                                    <option value="{{ candidate.id }}">[{{ candidate.description }}] {{ candidate.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <select class="form-select mb-2" name="option2" required>
+                                <option value="">Select candidate for option 2</option>
+                                {% for candidate in candidates %}
+                                    <option value="{{ candidate.id }}">[{{ candidate.description }}] {{ candidate.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <select class="form-select mb-2" name="option3">
+                                <option value="">Select candidate for option 3 (optional)</option>
+                                {% for candidate in candidates %}
+                                    <option value="{{ candidate.id }}">[{{ candidate.description }}] {{ candidate.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <select class="form-select mb-2" name="option4">
+                                <option value="">Select candidate for option 4 (optional)</option>
+                                {% for candidate in candidates %}
+                                    <option value="{{ candidate.id }}">[{{ candidate.description }}] {{ candidate.name }}</option>
+                                {% endfor %}
+                            </select>
+                        {% else %}
+                            <div class="alert alert-warning">
+                                No candidates available yet. Add candidates first before creating an election.
+                            </div>
+                        {% endif %}
                     </div>
 
                     <button type="submit" class="btn btn-primary w-100">Create Election</button>
