@@ -3,7 +3,7 @@
 # pip install flask_sqlalchemy
 # pip install sqlalchemy
 
-from flask import Flask, request, redirect, jsonify, render_template
+from flask import Flask, request, redirect, jsonify, render_template, session  #added session
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from database_init import db
@@ -26,10 +26,30 @@ os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 
 #call routes here:
 
+
+
 #homepage route
 @app.route("/")
 def home():
+    generate_notifications()  # added for notification badge
     return render_template("home.html")
+
+#############  FOR NOTIFICATION BADGE #############
+@app.context_processor
+def inject_notification_count():  
+    unread_notification_count = 0  
+
+    voter_id = session.get("user_id")  
+    if voter_id:  # added
+        from models.notification import Notification  
+        unread_notification_count = Notification.query.filter_by(
+            voter_id=voter_id,
+            is_read=False
+        ).count()  
+
+    return dict(unread_notification_count=unread_notification_count)  
+
+########################################################
 
 #service request routes
 from routes.service_request_routes import s_bp
@@ -67,7 +87,9 @@ app.register_blueprint(vote_flow_bp)
 from routes.chatbot import chat_bp
 app.register_blueprint(chat_bp)
 
-
+#notificaTIon routes
+from routes.notification import notification_bp, generate_notifications 
+app.register_blueprint(notification_bp)  
 
 # Create Database Tables
 with app.app_context():
