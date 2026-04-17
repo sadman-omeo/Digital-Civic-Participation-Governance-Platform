@@ -91,6 +91,14 @@ app.register_blueprint(chat_bp)
 from routes.notification import notification_bp, generate_notifications 
 app.register_blueprint(notification_bp)  
 
+#result visualization routes
+from routes.results import result_bp  
+app.register_blueprint(result_bp)  
+
+
+
+
+
 # Create Database Tables
 with app.app_context():
     db.create_all()
