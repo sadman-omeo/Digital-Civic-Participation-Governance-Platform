@@ -4,7 +4,7 @@ from models.voters import Voter
 from database_init import db
 from datetime import datetime, timedelta, timezone
 import uuid
-import requests
+#import requests
 
 token_bp= Blueprint("token", __name__, url_prefix="/token")
 @token_bp.route("/generate_token", methods=["GET", "POST"])
@@ -19,7 +19,7 @@ def generate_token():
         return jsonify({"error": "Voter not found"}), 404
 
     if voter.has_voted:
-        return jsonify({"message": "You already voted. Cannot generate token."})
+        return render_template("you_voted.html")
 
     existing_token = VoteToken.query.filter_by(voter_id=voter_id, used=False).order_by(VoteToken.id.desc()).first()
     active_token = None

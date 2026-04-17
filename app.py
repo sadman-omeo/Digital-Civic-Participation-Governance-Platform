@@ -59,6 +59,13 @@ app.register_blueprint(c_bp)
 from routes.complaint_routes import complaint_bp
 app.register_blueprint(complaint_bp)
 
+#voting flow routes
+from routes.vote_flow import vote_flow_bp
+app.register_blueprint(vote_flow_bp)
+
+#chatbot route
+from routes.chatbot import chat_bp
+app.register_blueprint(chat_bp)
 
 
 

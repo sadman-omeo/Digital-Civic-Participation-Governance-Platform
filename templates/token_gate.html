@@ -5,21 +5,22 @@
     <title>Token Generation</title>
     <style>
         .container { margin: 50px auto; max-width: 400px; text-align: center; font-family: sans-serif; }
-        .token-box { 
-            width: 100%; padding: 15px; margin-bottom: 10px; 
-            border: 2px dashed #ccc; background: #f9f9f9; 
+        .token-box {
+            width: 100%; padding: 15px; margin-bottom: 10px;
+            border: 2px dashed #ccc; background: #f9f9f9;
             font-family: monospace; font-size: 1.1em;
         }
         .btn { padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
         .btn:disabled { background: #ccc; cursor: not-allowed; }
         .error { color: #d9534f; margin-top: 10px; font-size: 0.9em; }
+        .next-btn { background: #198754; text-decoration: none; display: inline-block; margin-top: 10px; }
     </style>
 </head>
 <body>
 
 <div class="container">
     <h2>Generate Voting Token</h2>
-    
+
     <div class="token-box">
         {% if active_token %}
             {{ active_token.token }}
@@ -28,11 +29,17 @@
         {% endif %}
     </div>
 
-    <form action="/token/generate_token"method="POST">
+    <form action="/token/generate_token" method="POST">
         {% if active_token %}
             <button type="submit" class="btn" disabled title="Wait until current token expires">Generate</button>
             <p class="error">Active token exists. Please wait until it expires to generate a new one.</p>
             <p><small>Expires at: {{ expired.strftime('%H:%M:%S') }} Bangladeshi Time</small></p>
+
+            <div>
+                <a href="{{ url_for('vote_flow.vote_cast_page') }}" class="btn next-btn">
+                    Next
+                </a>
+            </div>
         {% else %}
             <button type="submit" class="btn">Generate</button>
         {% endif %}

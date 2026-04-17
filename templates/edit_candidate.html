@@ -9,11 +9,13 @@
                 <p class="page-intro mb-4">Update candidate details, change the election category, or replace the profile image.</p>
 
                 <form action="{{ url_for('c_bp.update_candidate', candidate_id=candidate.id) }}" method="POST" enctype="multipart/form-data">
+
+
                     <div class="mb-3">
                         <label class="form-label">Candidate Name</label>
                         <input type="text" name="name" class="form-control" value="{{ candidate.name }}" required>
                     </div>
-
+                    
                     <div class="mb-3">
                         <label class="form-label">Election Category</label>
                         <input type="text" name="category" class="form-control" value="{{ candidate.category }}" required>
