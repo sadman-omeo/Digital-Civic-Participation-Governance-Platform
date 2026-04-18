@@ -95,7 +95,9 @@ app.register_blueprint(notification_bp)
 from routes.results import result_bp  
 app.register_blueprint(result_bp)  
 
-
+#audit log routes
+from routes.audit_log import audit_bp
+app.register_blueprint(audit_bp)
 
 
 
