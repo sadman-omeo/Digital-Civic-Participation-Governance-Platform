@@ -5,6 +5,8 @@ from database_init import db
 from datetime import datetime, timedelta, timezone
 import uuid
 #import requests
+from election_status_helper import is_election_locked #jesia auto lock
+from models.election_creation import ElectionCreation #jeisa auto lock
 
 token_bp= Blueprint("token", __name__, url_prefix="/token")
 @token_bp.route("/generate_token", methods=["GET", "POST"])
@@ -14,6 +16,20 @@ def generate_token():
     if not voter_id:
         return redirect("/auth/login")
     
+    ############## jesia auto lock #######
+    selected_election_id = session.get("selected_election_id")
+    if not selected_election_id:
+        return redirect(url_for("vote_flow.election_select"))
+
+    election = ElectionCreation.query.get(selected_election_id)
+    if not election:
+        return "Election not found", 404
+
+    if is_election_locked(election):
+        return redirect(url_for("vote_flow.election_closed_page"))
+
+    ######### jesia auto lock #############
+
     voter = Voter.query.get(voter_id)
     if not voter:
         return jsonify({"error": "Voter not found"}), 404

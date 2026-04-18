@@ -1,6 +1,10 @@
 from datetime import datetime, timezone
-from flask import Blueprint, render_template, request, redirect, session, url_for, jsonify
+from election_status_helper import is_election_locked #new added
+from flask import Blueprint, render_template, request, redirect, session, url_for, jsonify, flash #added flash for auto lock
 from urllib.parse import quote
+#Jesia recaptcha imports
+import os
+from recaptcha_helper import verify_recaptcha
 
 from database_init import db
 from models.election_creation import ElectionCreation, VotingOption
@@ -9,20 +13,23 @@ from models.voters import Voter
 
 vote_flow_bp = Blueprint("vote_flow", __name__, url_prefix="/vote")
 
+################### To Delete part ######################
+#Delete this part. Not needed for the new feature. 
+#def parse_deadline(deadline_str):
+#    formats = [
+#        "%Y-%m-%dT%H:%M",
+ #       "%Y-%m-%d %H:%M",
+  #      "%Y-%m-%d"
+   # ]
 
-def parse_deadline(deadline_str):
-    formats = [
-        "%Y-%m-%dT%H:%M",
-        "%Y-%m-%d %H:%M",
-        "%Y-%m-%d"
-    ]
+    #for fmt in formats:
+     #   try:
+      #      return datetime.strptime(deadline_str, fmt)
+       # except ValueError:
+        #    continue
+    #return None
 
-    for fmt in formats:
-        try:
-            return datetime.strptime(deadline_str, fmt)
-        except ValueError:
-            continue
-    return None
+ #################### to Delete part ####################   
 
 def build_sticker_data(candidate_name, election_title, voter_id):
     sticker_svg = f"""
@@ -100,6 +107,16 @@ def election_select():
     if not voter_id:
         return redirect("/auth/login")
 
+    # if request.method == "POST":
+    #     election_id = request.form.get("election_id", type=int)
+    #     election = ElectionCreation.query.get(election_id)
+
+    #     if not election:
+    #         return "Election not found", 404
+
+    #     session["selected_election_id"] = election.id
+    #     return redirect("/token/generate_token")
+    ### new ###
     if request.method == "POST":
         election_id = request.form.get("election_id", type=int)
         election = ElectionCreation.query.get(election_id)
@@ -107,19 +124,39 @@ def election_select():
         if not election:
             return "Election not found", 404
 
+        if is_election_locked(election):
+            session["selected_election_id"] = election.id
+            return redirect(url_for("vote_flow.election_closed_page"))
+
         session["selected_election_id"] = election.id
         return redirect("/token/generate_token")
+    ### new ###
 
+    # all_elections = ElectionCreation.query.all()
+    # active_elections = []
+
+    # now = datetime.now()
+    # for election in all_elections:
+    #     deadline = parse_deadline(election.deadline)
+    #     if deadline and deadline > now:
+    #         active_elections.append(election)
+
+    # return render_template("election_select.html", elections=active_elections)
+
+    #### new ####
     all_elections = ElectionCreation.query.all()
-    active_elections = []
+    locked_election_ids = []
 
-    now = datetime.now()
     for election in all_elections:
-        deadline = parse_deadline(election.deadline)
-        if deadline and deadline > now:
-            active_elections.append(election)
+        if is_election_locked(election):
+            locked_election_ids.append(election.id)
 
-    return render_template("election_select.html", elections=active_elections)
+    return render_template(
+        "election_select.html",
+        elections=all_elections,
+        locked_election_ids = locked_election_ids
+    )
+    #### new ####
 
 
 @vote_flow_bp.route("/cast", methods=["GET"])
@@ -135,13 +172,24 @@ def vote_cast_page():
     election = ElectionCreation.query.get(election_id)
     if not election:
         return "Election not found", 404
+    
+    #### new ####
+    if is_election_locked(election):
+        return redirect(url_for("vote_flow.election_closed_page"))
 
+    # return render_template(
+    #     "vote_cast.html",
+    #     election=election,
+    #     options=election.options
+    # )
+    #### new jesia recaptcha    ####
     return render_template(
         "vote_cast.html",
         election=election,
-        options=election.options
+        options=election.options,
+        recaptcha_site_key=os.getenv("RECAPTCHA_SITE_KEY")
     )
-
+    ########## jesia recaptcha end ############
 
 @vote_flow_bp.route("/submit", methods=["POST"])
 def submit_vote():
@@ -164,9 +212,19 @@ def submit_vote():
     if not election:
         return "Election not found", 404
 
-    deadline = parse_deadline(election.deadline)
-    if not deadline or deadline <= datetime.now():
-        return "This election is no longer active.", 400
+    # deadline = parse_deadline(election.deadline)
+    # if not deadline or deadline <= datetime.now():
+    #     return "This election is no longer active.", 400
+    ### new ###
+    if is_election_locked(election):
+        return redirect(url_for("vote_flow.election_closed_page"))
+    ### new ###
+    ######### jesia recaptcha ##########
+    recaptcha_response = request.form.get("g-recaptcha-response")
+    if not verify_recaptcha(recaptcha_response):
+        return "reCAPTCHA verification failed. Please try again.", 400
+    ####### Jesia rercaptcha #############
+
 
     option_id = request.form.get("candidate_id", type=int)
     token_value = request.form.get("token", "").strip()
@@ -244,3 +302,14 @@ def sticker_data():
         return jsonify({"error": "No recent vote found"}), 404
 
     return jsonify(build_sticker_data(candidate_name, election_title, voter_id)), 200
+
+#### new ####
+@vote_flow_bp.route("/election-closed", methods=["GET"])
+def election_closed_page():
+    election_id = session.get("selected_election_id")
+    election = None
+
+    if election_id:
+        election = ElectionCreation.query.get(election_id)
+
+    return render_template("election_closed.html", election=election)
