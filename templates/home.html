@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card card-smooth p-5">
+            <div class="row align-items-center">
+                <div class="col-lg-7">
+                    <h1 class="section-title mb-3">Welcome to the Digital Civic Participation Platform</h1>
+                    <p class="page-intro">Ekhane aaro design kora lagbe. Lets try</p>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{{ url_for('e_bp.election_creation_page') }}" class="btn btn-primary">Create Election</a>
+                        <a href="{{ url_for('s_bp.service_requests_page') }}" class="btn btn-outline-primary">Submit Request</a>
+                    </div>
+                </div>
+                <div class="col-lg-5 text-lg-end mt-4 mt-lg-0">
+                    <div class="p-4 bg-primary bg-opacity-10 rounded-4">
+                        <h2 class="h4 text-primary mb-2">Other designs needed:</h2>
+                        <ul class="list-unstyled text-muted mb-0">
+                            <li class="mb-2">• This is the homepage dashboard</li>
+                            <li class="mb-2">• Require admin dashboard</li>
+                            <li class="mb-2">• Require user dashboard</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

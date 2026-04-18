@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card card-smooth p-4 mb-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
+                <div>
+                    <h1 class="section-title mb-2">Complaint Management</h1>
+                    <p class="page-intro">Track voter complaints, update statuses, and respond from a centralized complaint dashboard.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card card-smooth">
+            <div class="card-body p-4">
+                <h3 class="mb-4">Submit Complaint</h3>
+
+                <form action="{{ url_for('complaint_bp.add_complaint') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Voter Name</label>
+                        <input type="text" name="voter_name" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Voter Email</label>
+                        <input type="email" name="voter_email" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Subject</label>
+                        <input type="text" name="subject" class="form-control" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Complaint Message</label>
+                        <textarea name="message" class="form-control" rows="4" required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Submit Complaint</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card card-smooth">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0">Complaint List</h3>
+                    <span class="badge bg-primary">{{ complaints|length }} Complaints</span>
+                </div>
+
+                {% if complaints %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Voter</th>
+                                    <th>Subject</th>
+                                    <th>Status</th>
+                                    <th>Admin Reply</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for c in complaints %}
+                                    <tr>
+                                        <td>{{ c.id }}</td>
+                                        <td>
+                                            <strong>{{ c.voter_name }}</strong><br>
+                                            <small>{{ c.voter_email }}</small>
+                                        </td>
+                                        <td>{{ c.subject }}</td>
+                                        <td>
+                                            {% if c.status == "Pending" %}
+                                                <span class="badge bg-secondary">{{ c.status }}</span>
+                                            {% elif c.status == "In Review" %}
+                                                <span class="badge bg-warning text-dark">{{ c.status }}</span>
+                                            {% elif c.status == "Resolved" %}
+                                                <span class="badge bg-success">{{ c.status }}</span>
+                                            {% elif c.status == "Closed" %}
+                                                <span class="badge bg-dark">{{ c.status }}</span>
+                                            {% else %}
+                                                <span class="badge bg-primary">{{ c.status }}</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            {% if c.admin_reply %}
+                                                {{ c.admin_reply }}
+                                            {% else %}
+                                                <span class="text-muted">No reply yet</span>
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="d-grid gap-2">
+                                                <a href="{{ url_for('complaint_bp.edit_complaint_page', complaint_id=c.id) }}" class="btn btn-warning btn-sm">Manage</a>
+                                                <form action="{{ url_for('complaint_bp.delete_complaint', complaint_id=c.id) }}" method="POST" onsubmit="return confirm('Delete this complaint?');">
+                                                    <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                                </form>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-secondary mb-0">No complaints submitted yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

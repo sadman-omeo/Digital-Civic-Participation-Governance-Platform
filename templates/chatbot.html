@@ -1,0 +1,213 @@
+{% extends "base.html" %}
+
+{% block content %}
+<style>
+    .chat-wrapper {
+        max-width: 960px;
+        margin: 0 auto;
+        display: grid;
+        gap: 24px;
+    }
+
+    .chat-header {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 24px;
+        background: #eef3ff;
+        border-radius: 1rem;
+        box-shadow: inset 0 0 0 1px rgba(47, 85, 212, 0.08);
+    }
+
+    .bot-avatar {
+        width: 72px;
+        height: 72px;
+        display: grid;
+        place-items: center;
+        border-radius: 24px;
+        background: #2f55d4;
+        color: white;
+        font-size: 32px;
+    }
+
+    .chat-box {
+        min-height: 360px;
+        padding: 24px;
+        background: white;
+        border-radius: 1rem;
+        box-shadow: 0 18px 40px rgba(23, 45, 92, 0.08);
+        overflow-y: auto;
+        display: grid;
+        gap: 16px;
+    }
+
+    .msg {
+        display: flex;
+        gap: 12px;
+        align-items: flex-start;
+    }
+
+    .user-msg {
+        justify-content: flex-end;
+    }
+
+    .bubble {
+        max-width: 72%;
+        padding: 14px 18px;
+        border-radius: 18px;
+        background: #eef3ff;
+        color: #1f305f;
+        line-height: 1.6;
+        box-shadow: 0 10px 25px rgba(47, 85, 212, 0.08);
+    }
+
+    .user-msg .bubble {
+        background: #2f55d4;
+        color: white;
+    }
+
+    .chat-form {
+        display: grid;
+        grid-template-columns: 1fr auto;
+        gap: 12px;
+        align-items: center;
+    }
+
+    .chat-form input {
+        padding: 14px 16px;
+        border-radius: 14px;
+        border: 1px solid rgba(47, 85, 212, 0.16);
+    }
+
+    .session-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        color: #52618f;
+        font-size: 0.95rem;
+    }
+
+    .session-info code {
+        background: #eef3ff;
+        padding: 6px 10px;
+        border-radius: 10px;
+    }
+
+    .btn-sm {
+        border: 1px solid rgba(47, 85, 212, 0.12);
+        background: white;
+        color: #2f55d4;
+        padding: 8px 12px;
+        border-radius: 12px;
+    }
+
+    .typing-indicator .bubble {
+        background: #dbe4ff;
+    }
+</style>
+
+<div class="chat-wrapper">
+    <div class="chat-header">
+        <span class="bot-avatar">🤖</span>
+        <div>
+            <h1 class="section-title mb-1">Civic AI Chatbot</h1>
+            <p class="page-intro mb-0">Ask questions about voting, civic rights, or how the app works.</p>
+        </div>
+    </div>
+
+    <div class="chat-box" id="chatBox">
+        <div class="msg bot-msg">
+            <span class="avatar">🤖</span>
+            <div class="bubble">
+                Hello! I'm your Civic AI assistant. Ask me about <strong>voting</strong>, <strong>democracy</strong>, or anything else! 😊
+            </div>
+        </div>
+    </div>
+
+    <form class="chat-form" id="chatForm">
+        <input type="text" id="userInput" placeholder="Type your message…" autocomplete="off" required />
+        <button type="submit" class="btn btn-primary">Send ➤</button>
+    </form>
+
+    <div class="session-info">
+        <span>Session ID: <code id="sessionDisplay">—</code></span>
+        <button type="button" class="btn-sm" onclick="clearChat()">🗑 Clear Chat</button>
+    </div>
+</div>
+
+<script>
+    let sessionId = null;
+    const chatBox = document.getElementById("chatBox");
+    const chatForm = document.getElementById("chatForm");
+    const userInput = document.getElementById("userInput");
+    const sessionDisp = document.getElementById("sessionDisplay");
+
+    function appendMsg(role, text) {
+        const div = document.createElement("div");
+        div.className = `msg ${role === "user" ? "user-msg" : "bot-msg"}`;
+        const avatar = role === "user" ? "🧑" : "🤖";
+        div.innerHTML = `<span class="avatar">${avatar}</span><div class="bubble">${text}</div>`;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function appendTyping() {
+        const div = document.createElement("div");
+        div.className = "msg bot-msg typing-indicator";
+        div.id = "typingDot";
+        div.innerHTML = `<span class="avatar">🤖</span><div class="bubble">●●●</div>`;
+        chatBox.appendChild(div);
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    chatForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const message = userInput.value.trim();
+        if (!message) return;
+
+        appendMsg("user", message);
+        userInput.value = "";
+        appendTyping();
+
+        try {
+            const res = await fetch("/api/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ session_id: sessionId, message })
+            });
+            const data = await res.json();
+            document.getElementById("typingDot")?.remove();
+
+            if (res.ok) {
+                sessionId = data.session_id;
+                sessionDisp.textContent = sessionId;
+                appendMsg("bot", data.bot_reply);
+            } else {
+                appendMsg("bot", "⚠️ " + (data.error || "Something went wrong."));
+            }
+        } catch (err) {
+            document.getElementById("typingDot")?.remove();
+            appendMsg("bot", "⚠️ Network error. Please check the Flask server.");
+        }
+    });
+
+    async function clearChat() {
+        if (!sessionId) return;
+
+        await fetch("/api/chat/clear", {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ session_id: sessionId })
+        });
+
+        chatBox.innerHTML = `
+            <div class="msg bot-msg">
+                <span class="avatar">🤖</span>
+                <div class="bubble">Chat cleared! How can I help you? 😊</div>
+            </div>`;
+        sessionId = null;
+        sessionDisp.textContent = "—";
+    }
+</script>
+{% endblock %}

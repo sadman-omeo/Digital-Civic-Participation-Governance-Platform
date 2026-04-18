@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Civic Participation Platform</title>
+
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --brand: #2f55d4;
+            --brand-soft: #edf0ff;
+            --surface: #ffffff;
+            --surface-soft: #f4f6ff;
+            --text: #1f305f;
+            --muted: #6d7790;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: linear-gradient(180deg, #f3f5ff 0%, #eef1ff 100%);
+            font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            color: var(--text);
+        }
+
+        .topbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 68px;
+            background: var(--brand);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 1000;
+            box-shadow: 0 10px 30px rgba(47, 85, 212, 0.16);
+        }
+
+        .topbar .brand {
+            font-size: 1.15rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+
+        .sidebar {
+            position: fixed;
+            top: 68px;
+            left: 0;
+            width: 240px;
+            height: calc(100vh - 68px);
+            background: #344f9c;
+            padding: 20px 0;
+            overflow-y: auto;
+            border-right: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .sidebar a {
+            display: block;
+            padding: 12px 24px;
+            color: rgba(255, 255, 255, 0.95);
+            text-decoration: none;
+            font-weight: 500;
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .sidebar a:hover,
+        .sidebar a.active {
+            background: rgba(255, 255, 255, 0.12);
+            color: #fff;
+        }
+
+        .content {
+            margin-left: 240px;
+            margin-top: 68px;
+            padding: 32px;
+            min-height: calc(100vh - 68px);
+        }
+
+        .card-smooth {
+            border: 0;
+            border-radius: 1rem;
+            background: var(--surface);
+            box-shadow: 0 18px 40px rgba(23, 45, 92, 0.08);
+        }
+
+        .section-title {
+            font-size: 1.35rem;
+            font-weight: 700;
+            margin-bottom: 1.25rem;
+            color: var(--text);
+        }
+
+        .page-intro {
+            color: var(--muted);
+            margin-bottom: 1.75rem;
+        }
+
+        @media (max-width: 992px) {
+            .sidebar,
+            .content {
+                position: static;
+                width: 100%;
+                margin: 0;
+            }
+
+            .sidebar {
+                height: auto;
+                border-right: none;
+                padding: 16px 0;
+            }
+
+            .content {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="topbar">
+        <span class="brand">Digital Civic Participation & Governance</span>
+        <div class="d-none d-lg-flex gap-3 align-items-center text-white-75">
+            <span>Your country, your rights!</span>
+        </div>
+    </div>
+
+    <div class="sidebar">
+        <a class="active" href="{{ url_for('home') }}">Dashboard</a>
+        <a href="{{ url_for('e_bp.election_creation_page') }}">Election Creation</a>
+        <a href="{{ url_for('s_bp.service_requests_page') }}">Service Requests</a>
+        <a href="{{ url_for('c_bp.candidates_page') }}">Candidates</a>
+        <a href="{{ url_for('complaint_bp.complaints_page') }}">Complaints</a>
+        <a href="{{ url_for('chat.chatbot_page') }}">Chatbot</a>
+        <a href="{{ url_for('vote_flow.election_select') }}">Vote Casting</a>
+        <a href="{{ url_for('notification_bp.notifications_page') }}">
+            Notifications
+            {% if unread_notification_count > 0 %}
+                <span class="badge bg-warning text-dark ms-2">{{ unread_notification_count }}</span>
+            {% endif %}
+        </a>
+        <a href="{{ url_for('auth.login') }}">Login</a>
+        <a href="{{ url_for('auth.signup') }}">Sign Up</a>
+    </div>
+
+    <main class="content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-4">
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ 'success' if category == 'success' else 'warning' }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>
