@@ -97,6 +97,7 @@
                                     <th>Title</th>
                                     <th>Description</th>
                                     <th>Start Time</th> <!-- added -->
+                                    <th>Action</th> <!-- added -->
                                     <th>Deadline</th>
                                 </tr>
                             </thead>
@@ -107,6 +108,15 @@
                                         <td>{{ election.title }}</td>
                                         <td>{{ election.description }}</td>
                                         <td>{{ election.start_time }}</td> <!-- added -->
+                                        <td> 
+                                            {% if election.result_published %}
+                                                <span class="badge bg-success">Published</span>
+                                            {% else %}
+                                                <form action="{{ url_for('e_bp.publish_result', election_id=election.id) }}" method="POST">
+                                                    <button type="submit" class="btn btn-sm btn-success">Publish Result</button>
+                                                </form>
+                                            {% endif %}
+                                        </td> <!-- added -->
                                         <td>{{ election.deadline }}</td>
                                     </tr>
                                 {% endfor %}
