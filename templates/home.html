@@ -2,31 +2,120 @@
 
 {% block content %}
 
+{% if current_user and current_user.role == "admin" %}
+
 <div class="row g-4">
     <div class="col-12">
         <div class="card card-smooth p-5">
-            <div class="row align-items-center">
-                <div class="col-lg-7">
-                    <h1 class="section-title mb-3">Welcome to the Digital Civic Participation Platform</h1>
-                    <p class="page-intro">Ekhane aaro design kora lagbe. Lets try</p>
-                    <div class="d-flex flex-wrap gap-2">
-                        <a href="{{ url_for('e_bp.election_creation_page') }}" class="btn btn-primary">Create Election</a>
-                        <a href="{{ url_for('s_bp.service_requests_page') }}" class="btn btn-outline-primary">Submit Request</a>
-                    </div>
-                </div>
-                <div class="col-lg-5 text-lg-end mt-4 mt-lg-0">
-                    <div class="p-4 bg-primary bg-opacity-10 rounded-4">
-                        <h2 class="h4 text-primary mb-2">Other designs needed:</h2>
-                        <ul class="list-unstyled text-muted mb-0">
-                            <li class="mb-2">• This is the homepage dashboard</li>
-                            <li class="mb-2">• Require admin dashboard</li>
-                            <li class="mb-2">• Require user dashboard</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+            <h1 class="section-title mb-3">Admin Dashboard</h1>
+            <p class="page-intro">
+                Manage elections, monitor complaints, review audit logs, and control the platform from one place.
+            </p>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+        <div class="card card-smooth p-4 h-100">
+            <h4>Election Creation</h4>
+            <p class="text-muted">Create and manage elections with start times, deadlines, and options.</p>
+            <a href="{{ url_for('e_bp.election_creation_page') }}" class="btn btn-primary">Open</a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+        <div class="card card-smooth p-4 h-100">
+            <h4>Candidate Management</h4>
+            <p class="text-muted">Add, update, and manage candidate information.</p>
+            <a href="{{ url_for('c_bp.candidates_page') }}" class="btn btn-primary">Open</a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+        <div class="card card-smooth p-4 h-100">
+            <h4>Complaints</h4>
+            <p class="text-muted">View complaint list and update their statuses.</p>
+            <a href="{{ url_for('complaint_bp.complaints_page') }}" class="btn btn-primary">Open</a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+        <div class="card card-smooth p-4 h-100">
+            <h4>Audit Logs</h4>
+            <p class="text-muted">Monitor vote history, failed attempts, and suspicious activity.</p>
+            <a href="{{ url_for('audit.audit_logs') }}" class="btn btn-primary">Open</a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+        <div class="card card-smooth p-4 h-100">
+            <h4>Results</h4>
+            <p class="text-muted">View result charts and download PDF reports.</p>
+            <a href="{{ url_for('result_bp.results_page') }}" class="btn btn-primary">Open</a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+        <div class="card card-smooth p-4 h-100">
+            <h4>Chatbot</h4>
+            <p class="text-muted">Use the assistant for civic help and support.</p>
+            <a href="{{ url_for('chat.chatbot_page') }}" class="btn btn-primary">Open</a>
         </div>
     </div>
 </div>
+
+{% else %}
+
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card card-smooth p-5">
+            <h1 class="section-title mb-3">Citizen Dashboard</h1>
+            <p class="page-intro">
+                Access services, submit complaints, participate in elections, and stay updated through notifications.
+            </p>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+        <div class="card card-smooth p-4 h-100">
+            <h4>Service Requests</h4>
+            <p class="text-muted">Submit civic service requests and review submitted requests.</p>
+            <a href="{{ url_for('s_bp.service_requests_page') }}" class="btn btn-primary">Open</a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+        <div class="card card-smooth p-4 h-100">
+            <h4>Complaints</h4>
+            <p class="text-muted">Submit complaints and check updates from the authority.</p>
+            <a href="{{ url_for('complaint_bp.complaints_page') }}" class="btn btn-primary">Open</a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+        <div class="card card-smooth p-4 h-100">
+            <h4>Vote Casting</h4>
+            <p class="text-muted">Choose an election, generate a token, and cast your vote securely.</p>
+            <a href="{{ url_for('vote_flow.election_select') }}" class="btn btn-primary">Open</a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+        <div class="card card-smooth p-4 h-100">
+            <h4>Notifications</h4>
+            <p class="text-muted">Receive election reminders and important updates.</p>
+            <a href="{{ url_for('notification_bp.notifications_page') }}" class="btn btn-primary">Open</a>
+        </div>
+    </div>
+
+    <div class="col-md-6 col-xl-4">
+        <div class="card card-smooth p-4 h-100">
+            <h4>Chatbot</h4>
+            <p class="text-muted">Ask civic questions and get assistance from the platform chatbot.</p>
+            <a href="{{ url_for('chat.chatbot_page') }}" class="btn btn-primary">Open</a>
+        </div>
+    </div>
+</div>
+
+{% endif %}
 
 {% endblock %}

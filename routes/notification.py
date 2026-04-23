@@ -1,10 +1,11 @@
-
 from datetime import datetime
 from flask import Blueprint, render_template, session, redirect, url_for
 from database_init import db
 from models.notification import Notification
 from models.election_creation import ElectionCreation
 from models.voters import Voter
+
+from brevo_email_helper import send_brevo_email  # added
 
 notification_bp = Blueprint("notification_bp", __name__, url_prefix="/notifications")
 
@@ -35,40 +36,52 @@ def generate_notifications():
 
         if start_time and start_time <= now and not election.start_notified:
             for voter in voters:
+                message = f"The election '{election.title}' has started. You can now vote."  # added
+
                 new_notification = Notification(
                     voter_id=voter.NID,
                     election_id=election.id,
                     title="Election Started",
-                    message=f"The election '{election.title}' has started. You can now vote.",
+                    message=message,
                     type="start"
                 )
                 db.session.add(new_notification)
+
+                send_brevo_email(voter.Email, voter.Name, "Election Started", message)  # added
 
             election.start_notified = True
 
         if end_time and end_time <= now and not election.end_notified:
             for voter in voters:
+                message = f"The election '{election.title}' has ended. Voting is now closed."  # added
+
                 new_notification = Notification(
                     voter_id=voter.NID,
                     election_id=election.id,
                     title="Election Closed",
-                    message=f"The election '{election.title}' has ended. Voting is now closed.",
+                    message=message,
                     type="end"
                 )
                 db.session.add(new_notification)
+
+                send_brevo_email(voter.Email, voter.Name, "Election Closed", message)  # added
 
             election.end_notified = True
 
         if election.result_published and not election.result_notified:
             for voter in voters:
+                message = f"The result for '{election.title}' has been published."  # added
+
                 new_notification = Notification(
                     voter_id=voter.NID,
                     election_id=election.id,
                     title="Result Published",
-                    message=f"The result for '{election.title}' has been published.",
+                    message=message,
                     type="result"
                 )
                 db.session.add(new_notification)
+
+                send_brevo_email(voter.Email, voter.Name, "Result Published", message)  # added
 
             election.result_notified = True
 

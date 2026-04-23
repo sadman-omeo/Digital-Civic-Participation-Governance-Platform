@@ -32,22 +32,45 @@ os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 @app.route("/")
 def home():
     generate_notifications()  # added for notification badge
-    return render_template("home.html")
+    return render_template("landing.html")
+
+
+@app.route("/dashboard")
+def dashboard():  # added
+    voter_id = session.get("user_id")
+    if not voter_id:
+        return redirect("/auth/login")
+
+    from models.voters import Voter  # added
+    current_user = Voter.query.get(voter_id)  # added
+
+    if not current_user:  # added
+        session.pop("user_id", None)  # added
+        return redirect("/")  # added
+
+    generate_notifications()  # added
+    return render_template("home.html", current_user=current_user)  # changed
+
+
 
 #############  FOR NOTIFICATION BADGE #############
 @app.context_processor
 def inject_notification_count():  
     unread_notification_count = 0  
+    current_user = None  # added
 
     voter_id = session.get("user_id")  
     if voter_id:  # added
+        from models.voters import Voter  # added
         from models.notification import Notification  
+        current_user = Voter.query.get(voter_id)  # added
+
         unread_notification_count = Notification.query.filter_by(
             voter_id=voter_id,
             is_read=False
         ).count()  
 
-    return dict(unread_notification_count=unread_notification_count)  
+    return dict(unread_notification_count=unread_notification_count, current_user=current_user)  
 
 ########################################################
 

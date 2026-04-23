@@ -127,26 +127,51 @@
     <div class="topbar">
         <span class="brand">Digital Civic Participation & Governance</span>
         <div class="d-none d-lg-flex gap-3 align-items-center text-white-75">
-            <span>Your country, your rights!</span>
+            {% if current_user %}
+                <span>
+                    {{ current_user.Name }} |
+                    {% if current_user.role == "admin" %}
+                        Admin
+                    {% else %}
+                        Citizen
+                    {% endif %}
+                </span>
+            {% else %}
+                <span>Your country, your rights!</span>
+            {% endif %}
         </div>
     </div>
 
     <div class="sidebar">
-        <a class="active" href="{{ url_for('home') }}">Dashboard</a>
-        <a href="{{ url_for('e_bp.election_creation_page') }}">Election Creation</a>
-        <a href="{{ url_for('s_bp.service_requests_page') }}">Service Requests</a>
-        <a href="{{ url_for('c_bp.candidates_page') }}">Candidates</a>
-        <a href="{{ url_for('complaint_bp.complaints_page') }}">Complaints</a>
-        <a href="{{ url_for('chat.chatbot_page') }}">Chatbot</a>
-        <a href="{{ url_for('vote_flow.election_select') }}">Vote Casting</a>
-        <a href="{{ url_for('notification_bp.notifications_page') }}">
-            Notifications
-            {% if unread_notification_count > 0 %}
-                <span class="badge bg-warning text-dark ms-2">{{ unread_notification_count }}</span>
+        {% if current_user %}
+            <a class="active" href="{{ url_for('dashboard') }}">Dashboard</a>
+
+            {% if current_user.role == "admin" %}
+                <a href="{{ url_for('e_bp.election_creation_page') }}">Election Creation</a>
+                <a href="{{ url_for('c_bp.candidates_page') }}">Candidates</a>
+                <a href="{{ url_for('complaint_bp.complaints_page') }}">Complaints</a>
+                <a href="{{ url_for('result_bp.results_page') }}">Results</a>
+                <a href="{{ url_for('audit.audit_logs') }}">Audit Logs</a>
+                <a href="{{ url_for('admin.getVoters') }}">Manage Users</a>
+                <a href="{{ url_for('chat.chatbot_page') }}">Chatbot</a>
+            {% else %}
+                <a href="{{ url_for('s_bp.service_requests_page') }}">Service Requests</a>
+                <a href="{{ url_for('complaint_bp.complaints_page') }}">Complaints</a>
+                <a href="{{ url_for('vote_flow.election_select') }}">Vote Casting</a>
+                <a href="{{ url_for('notification_bp.notifications_page') }}">
+                    Notifications
+                    {% if unread_notification_count > 0 %}
+                        <span class="badge bg-warning text-dark ms-2">{{ unread_notification_count }}</span>
+                    {% endif %}
+                </a>
+                <a href="{{ url_for('chat.chatbot_page') }}">Chatbot</a>
             {% endif %}
-        </a>
-        <a href="{{ url_for('auth.login') }}">Login</a>
-        <a href="{{ url_for('auth.signup') }}">Sign Up</a>
+            <a href="{{ url_for('auth.logout') }}">Logout</a>
+        {% else %}
+            <a class="active" href="{{ url_for('home') }}">Home</a>
+            <a href="{{ url_for('auth.login') }}">Login</a>
+            <a href="{{ url_for('auth.signup') }}">Sign Up</a>
+        {% endif %}
     </div>
 
     <main class="content">
