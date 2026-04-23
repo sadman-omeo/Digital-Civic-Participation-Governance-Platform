@@ -13,12 +13,26 @@
                         <select name="election_id" class="form-select" required>
                             <option value="">Select an election</option>
                             {% for election in elections %}
+                            <!-- JESIA AUTO LOCK -->
+
+                                <!-- <option value="{{ election.id }}">
+                                    {{ election.title }} | Deadline: {{ election.deadline }}
+                                </option> -->
                                 <option value="{{ election.id }}">
                                     {{ election.title }} | Deadline: {{ election.deadline }}
+                                    {% if election.id in locked_election_ids %} | LOCKED{% endif %}
                                 </option>
+
+                                <!-- JESIA AUTO LOCK -->
                             {% endfor %}
                         </select>
                     </div>
+                    
+                    <!-- Jesia auto lock -->
+                    <p class="text-muted small">
+                        Elections marked as <strong>LOCKED</strong> are closed and cannot be voted on.
+                    </p>
+                    <!-- Jesia auto lock -->
 
                     <button type="submit" class="btn btn-primary">
                         Continue to Token Page

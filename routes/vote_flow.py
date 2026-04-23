@@ -1,28 +1,103 @@
 from datetime import datetime, timezone
-from flask import Blueprint, render_template, request, redirect, session, url_for, jsonify
+from election_status_helper import is_election_locked #new added
+from flask import Blueprint, render_template, request, redirect, session, url_for, jsonify, flash #added flash for auto lock
 from urllib.parse import quote
+#Jesia recaptcha imports
+import os
+from recaptcha_helper import verify_recaptcha
 
 from database_init import db
 from models.election_creation import ElectionCreation, VotingOption
 from models.vote_tokens import VoteToken
 from models.voters import Voter
+from models.audit_log import AuditLog  # added from Syed
 
 vote_flow_bp = Blueprint("vote_flow", __name__, url_prefix="/vote")
 
+################### To Delete part ######################
+#Delete this part. Not needed for the new feature. 
+#def parse_deadline(deadline_str):
+#    formats = [
+#        "%Y-%m-%dT%H:%M",
+ #       "%Y-%m-%d %H:%M",
+  #      "%Y-%m-%d"
+   # ]
 
-def parse_deadline(deadline_str):
-    formats = [
-        "%Y-%m-%dT%H:%M",
-        "%Y-%m-%d %H:%M",
-        "%Y-%m-%d"
-    ]
+    #for fmt in formats:
+     #   try:
+      #      return datetime.strptime(deadline_str, fmt)
+       # except ValueError:
+        #    continue
+    #return None
 
-    for fmt in formats:
-        try:
-            return datetime.strptime(deadline_str, fmt)
-        except ValueError:
-            continue
-    return None
+ #################### to Delete part ####################  
+
+
+
+############ Abtoahy ###############
+# Maximum allowed successful votes from a single IP per election  # added from Syed
+IP_VOTE_LIMIT = 10  # added from Syed
+
+
+def get_client_ip():  # added from Syed
+    """Get real client IP, accounting for proxies."""
+    if request.headers.get("X-Forwarded-For"):
+        return request.headers["X-Forwarded-For"].split(",")[0].strip()
+    return request.remote_addr
+
+
+def log_vote(voter_nid, election_id, candidate_id, ip_address, status, fail_reason=None):  # added from Syed
+    """Write one audit log entry and flush it to the DB."""
+    entry = AuditLog(
+        voter_nid=voter_nid,
+        election_id=election_id,
+        candidate_id=candidate_id,
+        ip_address=ip_address,
+        status=status,
+        fail_reason=fail_reason,
+        cancelled=False,
+        timestamp=datetime.utcnow()
+    )
+    db.session.add(entry)
+    db.session.commit()
+
+
+def check_and_cancel_if_ip_limit_exceeded(ip_address, election_id):  # added from Syed
+    """
+    Count non-cancelled successful votes from this IP for this election.
+    If the count EXCEEDS IP_VOTE_LIMIT, cancel ALL of them:
+      - subtract their vote_count contributions from VotingOption
+      - mark the log entries as cancelled
+      - reset has_voted for those voters
+    Returns True if cancellation was triggered, False otherwise.
+    """
+    successful_logs = AuditLog.query.filter_by(
+        ip_address=ip_address,
+        election_id=election_id,
+        status="success",
+        cancelled=False
+    ).all()
+
+    if len(successful_logs) <= IP_VOTE_LIMIT:
+        return False
+
+    for log_entry in successful_logs:
+        if log_entry.candidate_id:
+            option = VotingOption.query.get(log_entry.candidate_id)
+            if option and option.vote_count > 0:
+                option.vote_count -= 1
+
+        if log_entry.voter_nid:
+            voter = Voter.query.get(log_entry.voter_nid)
+            if voter:
+                voter.has_voted = False
+
+        log_entry.cancelled = True
+
+    db.session.commit()
+    return True
+
+############### Abtoahy ################
 
 def build_sticker_data(candidate_name, election_title, voter_id):
     sticker_svg = f"""
@@ -100,6 +175,17 @@ def election_select():
     if not voter_id:
         return redirect("/auth/login")
 
+    # if request.method == "POST":
+    #     election_id = request.form.get("election_id", type=int)
+    #     election = ElectionCreation.query.get(election_id)
+
+    #     if not election:
+    #         return "Election not found", 404
+
+    #     session["selected_election_id"] = election.id
+    #     return redirect("/token/generate_token")
+    
+    ### new ###
     if request.method == "POST":
         election_id = request.form.get("election_id", type=int)
         election = ElectionCreation.query.get(election_id)
@@ -107,19 +193,39 @@ def election_select():
         if not election:
             return "Election not found", 404
 
+        if is_election_locked(election):
+            session["selected_election_id"] = election.id
+            return redirect(url_for("vote_flow.election_closed_page"))
+
         session["selected_election_id"] = election.id
         return redirect("/token/generate_token")
+    ### new ###
 
+    # all_elections = ElectionCreation.query.all()
+    # active_elections = []
+
+    # now = datetime.now()
+    # for election in all_elections:
+    #     deadline = parse_deadline(election.deadline)
+    #     if deadline and deadline > now:
+    #         active_elections.append(election)
+
+    # return render_template("election_select.html", elections=active_elections)
+
+    #### new ####
     all_elections = ElectionCreation.query.all()
-    active_elections = []
+    locked_election_ids = []
 
-    now = datetime.now()
     for election in all_elections:
-        deadline = parse_deadline(election.deadline)
-        if deadline and deadline > now:
-            active_elections.append(election)
+        if is_election_locked(election):
+            locked_election_ids.append(election.id)
 
-    return render_template("election_select.html", elections=active_elections)
+    return render_template(
+        "election_select.html",
+        elections=all_elections,
+        locked_election_ids = locked_election_ids
+    )
+    #### new ####
 
 
 @vote_flow_bp.route("/cast", methods=["GET"])
@@ -135,17 +241,116 @@ def vote_cast_page():
     election = ElectionCreation.query.get(election_id)
     if not election:
         return "Election not found", 404
+    
+    #### new ####
+    if is_election_locked(election):
+        return redirect(url_for("vote_flow.election_closed_page"))
 
+    # return render_template(
+    #     "vote_cast.html",
+    #     election=election,
+    #     options=election.options
+    # )
+    #### new jesia recaptcha    ####
     return render_template(
         "vote_cast.html",
         election=election,
-        options=election.options
+        options=election.options,
+        recaptcha_site_key=os.getenv("RECAPTCHA_SITE_KEY")
     )
+    ########## jesia recaptcha end ############
+
+# @vote_flow_bp.route("/submit", methods=["POST"])
+# def submit_vote():
+#     voter_id = session.get("user_id")
+#     if not voter_id:
+#         return redirect("/auth/login")
+
+#     voter = Voter.query.get(voter_id)
+#     if not voter:
+#         return "Voter not found", 404
+
+#     if voter.has_voted:
+#         return "You have already voted.", 400
+
+#     election_id = session.get("selected_election_id")
+#     if not election_id:
+#         return redirect(url_for("vote_flow.election_select"))
+
+#     election = ElectionCreation.query.get(election_id)
+#     if not election:
+#         return "Election not found", 404
+
+#     # deadline = parse_deadline(election.deadline)
+#     # if not deadline or deadline <= datetime.now():
+#     #     return "This election is no longer active.", 400
+#     ### new ###
+#     if is_election_locked(election):
+#         return redirect(url_for("vote_flow.election_closed_page"))
+#     ### new ###
+#     ######### jesia recaptcha ##########
+#     recaptcha_response = request.form.get("g-recaptcha-response")
+#     if not verify_recaptcha(recaptcha_response):
+#         return "reCAPTCHA verification failed. Please try again.", 400
+#     ####### Jesia rercaptcha #############
+
+
+#     option_id = request.form.get("candidate_id", type=int)
+#     token_value = request.form.get("token", "").strip()
+
+#     if not option_id:
+#         return "Please select a candidate.", 400
+
+#     if not token_value:
+#         return "Please enter your token.", 400
+
+#     selected_option = VotingOption.query.filter_by(
+#         id=option_id,
+#         election_id=election.id
+#     ).first()
+
+#     if not selected_option:
+#         return "Invalid candidate selection.", 400
+
+#     token_obj = VoteToken.query.filter_by(
+#         token=token_value,
+#         voter_id=voter_id,
+#         used=False
+#     ).first()
+
+#     if not token_obj:
+#         return "Invalid token.", 400
+
+#     if token_obj.expires_at:
+#         expires_at = token_obj.expires_at
+#         if expires_at.tzinfo is None:
+#             expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+#         if expires_at <= datetime.now(timezone.utc):
+#             return "Token expired.", 400
+
+#     selected_option.vote_count += 1
+#     voter.has_voted = True
+
+#     db.session.delete(token_obj)
+#     db.session.commit()
+
+#     session["last_vote_candidate"] = selected_option.option_text
+#     session["last_vote_election"] = election.title
+
+#     return redirect("/vote/i-voted")
+
+
+############### NEW Submit merging JESIA + ABTOAHY
+
+
+
 
 
 @vote_flow_bp.route("/submit", methods=["POST"])
 def submit_vote():
     voter_id = session.get("user_id")
+    ip = get_client_ip()
     if not voter_id:
         return redirect("/auth/login")
 
@@ -153,28 +358,37 @@ def submit_vote():
     if not voter:
         return "Voter not found", 404
 
+    election_id = session.get("selected_election_id")
     if voter.has_voted:
+        log_vote(voter_id, election_id, None, ip, "failed", "already voted")
         return "You have already voted.", 400
 
-    election_id = session.get("selected_election_id")
     if not election_id:
         return redirect(url_for("vote_flow.election_select"))
 
     election = ElectionCreation.query.get(election_id)
     if not election:
+        log_vote(voter_id, election_id, None, ip, "failed", "election not found")
         return "Election not found", 404
 
-    deadline = parse_deadline(election.deadline)
-    if not deadline or deadline <= datetime.now():
-        return "This election is no longer active.", 400
+    if is_election_locked(election):
+        log_vote(voter_id, election_id, None, ip, "failed", "election locked")
+        return redirect(url_for("vote_flow.election_closed_page"))
+
+    recaptcha_response = request.form.get("g-recaptcha-response")
+    if not verify_recaptcha(recaptcha_response):
+        log_vote(voter_id, election_id, None, ip, "failed", "recaptcha failed")
+        return "reCAPTCHA verification failed. Please try again.", 400
 
     option_id = request.form.get("candidate_id", type=int)
     token_value = request.form.get("token", "").strip()
 
     if not option_id:
+        log_vote(voter_id, election_id, None, ip, "failed", "no candidate selected")
         return "Please select a candidate.", 400
 
     if not token_value:
+        log_vote(voter_id, election_id, None, ip, "failed", "no token provided")
         return "Please enter your token.", 400
 
     selected_option = VotingOption.query.filter_by(
@@ -183,6 +397,7 @@ def submit_vote():
     ).first()
 
     if not selected_option:
+        log_vote(voter_id, election_id, option_id, ip, "failed", "invalid candidate")
         return "Invalid candidate selection.", 400
 
     token_obj = VoteToken.query.filter_by(
@@ -192,6 +407,7 @@ def submit_vote():
     ).first()
 
     if not token_obj:
+        log_vote(voter_id, election_id, option_id, ip, "failed", "invalid token")
         return "Invalid token.", 400
 
     if token_obj.expires_at:
@@ -200,6 +416,7 @@ def submit_vote():
             expires_at = expires_at.replace(tzinfo=timezone.utc)
 
         if expires_at <= datetime.now(timezone.utc):
+            log_vote(voter_id, election_id, option_id, ip, "failed", "token expired")
             return "Token expired.", 400
 
     selected_option.vote_count += 1
@@ -208,10 +425,22 @@ def submit_vote():
     db.session.delete(token_obj)
     db.session.commit()
 
+    log_vote(voter_id, election_id, selected_option.id, ip, "success")
+    check_and_cancel_if_ip_limit_exceeded(ip, election_id)
+
     session["last_vote_candidate"] = selected_option.option_text
     session["last_vote_election"] = election.title
 
     return redirect("/vote/i-voted")
+
+
+
+
+
+
+
+
+
 
 @vote_flow_bp.route("/i-voted", endpoint="i_voted_page", methods=["GET"])
 def i_voted_page():
@@ -244,3 +473,14 @@ def sticker_data():
         return jsonify({"error": "No recent vote found"}), 404
 
     return jsonify(build_sticker_data(candidate_name, election_title, voter_id)), 200
+
+#### new ####
+@vote_flow_bp.route("/election-closed", methods=["GET"])
+def election_closed_page():
+    election_id = session.get("selected_election_id")
+    election = None
+
+    if election_id:
+        election = ElectionCreation.query.get(election_id)
+
+    return render_template("election_closed.html", election=election)

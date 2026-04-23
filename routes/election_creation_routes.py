@@ -72,3 +72,16 @@ def add_election():
 
     flash("Election created successfully!")
     return redirect(url_for("e_bp.election_creation_page"))
+
+@e_bp.route("/publish_result/<int:election_id>", methods=["POST"])
+def publish_result(election_id):  # added
+    election = ElectionCreation.query.get(election_id)  # added
+
+    if not election:  # added
+        return "Election not found", 404  # added
+
+    election.result_published = True  # added
+    db.session.commit()  # added
+
+    flash("Result published successfully!")  # added
+    return redirect(url_for("e_bp.election_creation_page"))  # added
