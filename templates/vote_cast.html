@@ -2,9 +2,7 @@
 
 {% block content %}
 
-<!-- Jesia recaptcha -->
-<script src="https://www.google.com/recaptcha/api.js" async defer></script>   
-<!-- Jesia recaptcha -->
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 
 <div class="container">
     <div class="card shadow-sm border-0">
@@ -22,7 +20,9 @@
                     {{ success_message }}
                 </div>
             {% else %}
-                <form method="POST" action="{{ url_for('vote_flow.submit_vote') }}">
+                <form method="POST" action="{{ url_for('vote_flow.submit_vote') }}" id="voteForm"> <!-- changed -->
+                    <input type="hidden" name="voter_ip" id="voter_ip" value=""> <!-- added -->
+
                     <div class="mb-3">
                         <label class="form-label fw-semibold">Select Candidate</label>
 
@@ -54,7 +54,7 @@
                         >
                     </div>
                     
-                    <!-- Jesia recaptcha -->
+                    <!-- Jeisa Recaptcha -->
                     <div class="g-recaptcha mb-3" data-sitekey="{{ recaptcha_site_key }}"></div>
                     <!-- Jesia recaptcha -->
 
@@ -66,4 +66,16 @@
         </div>
     </div>
 </div>
+
+<script>
+    fetch("https://api.ipify.org?format=json")
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("voter_ip").value = data.ip;
+        })
+        .catch(() => {
+            document.getElementById("voter_ip").value = "unknown";
+        });
+</script>
+
 {% endblock %}
