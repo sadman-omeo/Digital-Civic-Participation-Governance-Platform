@@ -1,8 +1,17 @@
-from flask import Blueprint, render_template, request, redirect, jsonify, flash, url_for
+from flask import Blueprint, render_template, request, redirect, jsonify, flash, url_for, session
 from database_init import db
 from models.complaint import Complaint
+from models.voters import Voter  # added
 
 complaint_bp = Blueprint("complaint_bp", __name__, url_prefix="/complaints")
+
+def is_admin():  # added
+    voter_id = session.get("user_id")  # added
+    if not voter_id:  # added
+        return False  # added
+
+    user = Voter.query.get(voter_id)  # added
+    return user and user.role == "admin"  # added
 
 
 @complaint_bp.route("/")
@@ -76,8 +85,22 @@ def get_complaint(complaint_id):
 
 
 # GET - admin edit page
+# @complaint_bp.route("/edit/<int:complaint_id>", methods=["GET"])
+# def edit_complaint_page(complaint_id):
+#     complaint = Complaint.query.get(complaint_id)
+
+#     if not complaint:
+#         return "Complaint Not Found", 404
+
+#     return render_template("edit_complaint.html", complaint=complaint)
+
+# GET - admin edit page
 @complaint_bp.route("/edit/<int:complaint_id>", methods=["GET"])
 def edit_complaint_page(complaint_id):
+    if not is_admin():  # added
+        flash("Only admin can manage complaints.", "danger")  # added
+        return redirect(url_for("complaint_bp.complaints_page"))  # added
+
     complaint = Complaint.query.get(complaint_id)
 
     if not complaint:
@@ -87,8 +110,34 @@ def edit_complaint_page(complaint_id):
 
 
 # PUT/POST - admin updates status and reply
+# @complaint_bp.route("/update/<int:complaint_id>", methods=["POST", "PUT"])
+# def update_complaint(complaint_id):
+#     complaint = Complaint.query.get(complaint_id)
+
+#     if not complaint:
+#         return "Complaint Not Found", 404
+
+#     status = request.form.get("status")
+#     admin_reply = request.form.get("admin_reply")
+
+#     if status is not None and status.strip():
+#         complaint.status = status
+
+#     if admin_reply is not None:
+#         complaint.admin_reply = admin_reply
+
+#     db.session.commit()
+
+#     flash("Complaint updated successfully.", "success")
+#     return redirect(url_for("complaint_bp.complaints_page"))
+
+# PUT/POST - admin updates status and reply
 @complaint_bp.route("/update/<int:complaint_id>", methods=["POST", "PUT"])
 def update_complaint(complaint_id):
+    if not is_admin():  # added
+        flash("Only admin can update complaints.", "danger")  # added
+        return redirect(url_for("complaint_bp.complaints_page"))  # added
+
     complaint = Complaint.query.get(complaint_id)
 
     if not complaint:
@@ -112,6 +161,10 @@ def update_complaint(complaint_id):
 # DELETE/POST - admin deletes complaint
 @complaint_bp.route("/delete/<int:complaint_id>", methods=["POST", "DELETE"])
 def delete_complaint(complaint_id):
+    if not is_admin():  # added
+        flash("Only admin can delete complaints.", "danger")  # added
+        return redirect(url_for("complaint_bp.complaints_page"))  # added
+
     complaint = Complaint.query.get(complaint_id)
 
     if not complaint:

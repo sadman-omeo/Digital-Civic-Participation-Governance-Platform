@@ -33,7 +33,10 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label">Role</label>
-                            <input type="dropdown" class="form-control" name="role" value="{{voter.role}}"required>
+                            <select class="form-control" name="role" required> <!-- changed -->
+                                <option value="voter" {% if voter.role == "voter" %}selected{% endif %}>Citizen</option> <!-- changed -->
+                                <option value="admin" {% if voter.role == "admin" %}selected{% endif %}>Admin</option> <!-- added -->
+                            </select>
                         </div>
                         <button type="submit" class="btn btn-custom w-100 mt-2">UPDATE</button>
                     </form>
