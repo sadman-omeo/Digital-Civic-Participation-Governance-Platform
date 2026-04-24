@@ -2,6 +2,8 @@
 # pip install flask
 # pip install flask_sqlalchemy
 # pip install sqlalchemy
+from dotenv import load_dotenv  # added
+load_dotenv()  # added
 
 from flask import Flask, request, redirect, jsonify, render_template, session  #added session
 from flask_sqlalchemy import SQLAlchemy
@@ -134,4 +136,7 @@ with app.app_context():
 
 # Run the App
 if __name__ == "__main__":
-    app.run(debug=True, port = 1234)
+    import os
+    debug_mode = os.getenv("FLASK_ENV") == "development"
+    port = int(os.getenv("PORT", 1234))
+    app.run(debug=debug_mode, port=port, host="0.0.0.0")
