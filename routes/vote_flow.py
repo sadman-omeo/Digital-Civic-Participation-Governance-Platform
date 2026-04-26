@@ -194,7 +194,7 @@ def election_select():
             return "Election not found", 404
 
         if is_election_locked(election):
-            session["selected_election_id"] = election.id
+            session["selected_election_id"] = election.id 
             return redirect(url_for("vote_flow.election_closed_page"))
 
         session["selected_election_id"] = election.id
@@ -350,7 +350,12 @@ def vote_cast_page():
 @vote_flow_bp.route("/submit", methods=["POST"])
 def submit_vote():
     voter_id = session.get("user_id")
-    ip = get_client_ip()
+    
+    
+    frontend_ip = request.form.get("voter_ip", "").strip()  # added
+    ip = get_client_ip() or frontend_ip or "unknown"  # changed
+    
+    
     if not voter_id:
         return redirect("/auth/login")
 

@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card card-smooth">
+            <div class="card-body p-4">
+                <h3 class="mb-4">Edit Election</h3>
+
+                <form action="{{ url_for('e_bp.edit_election', election_id=election.id) }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Election Title</label>
+                        <input type="text" class="form-control" name="title" value="{{ election.title }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="3" required>{{ election.description }}</textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Election Type</label>
+                        <select class="form-select" name="type" required>
+                            <option value="mayor" {% if election.type == "mayor" %}selected{% endif %}>Mayor</option>
+                            <option value="national" {% if election.type == "national" %}selected{% endif %}>National</option>
+                            <option value="local" {% if election.type == "local" %}selected{% endif %}>Local</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Start Time</label>
+                        <input type="datetime-local" class="form-control" name="start_time" value="{{ election.start_time }}" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Deadline</label>
+                        <input type="datetime-local" class="form-control" name="deadline" value="{{ election.deadline }}" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Update Election</button>
+
+                    <a href="{{ url_for('e_bp.election_creation_page') }}" class="btn btn-secondary w-100 mt-2">
+                        Cancel
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

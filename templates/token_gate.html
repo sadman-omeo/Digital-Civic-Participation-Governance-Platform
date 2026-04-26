@@ -3,25 +3,120 @@
 <head>
     <meta charset="UTF-8">
     <title>Token Generation</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .container { margin: 50px auto; max-width: 400px; text-align: center; font-family: sans-serif; }
-        .token-box {
-            width: 100%; padding: 15px; margin-bottom: 10px;
-            border: 2px dashed #ccc; background: #f9f9f9;
-            font-family: monospace; font-size: 1.1em;
+        body {
+            background: linear-gradient(135deg, #e8f0fe, #f0f4ff);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: sans-serif;
         }
-        .btn { padding: 10px 20px; cursor: pointer; background: #007bff; color: white; border: none; border-radius: 4px; }
-        .btn:disabled { background: #ccc; cursor: not-allowed; }
-        .error { color: #d9534f; margin-top: 10px; font-size: 0.9em; }
-        .next-btn { background: #198754; text-decoration: none; display: inline-block; margin-top: 10px; }
+
+        .token-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            padding: 40px 36px;
+            max-width: 460px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .token-card h2 {
+            font-weight: 700;
+            color: #1a1a2e;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            color: #6c757d;
+            font-size: 0.9em;
+            margin-bottom: 28px;
+        }
+
+        .token-box {
+            background: #f4f6ff;
+            border: 2px dashed #99b4f5;
+            border-radius: 10px;
+            padding: 18px 20px;
+            font-family: monospace;
+            font-size: 1.1em;
+            color: #1a1a2e;
+            letter-spacing: 0.04em;
+            word-break: break-all;
+            margin-bottom: 16px;
+        }
+
+        .btn-copy {
+            background: #4a6cf7;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 28px;
+            font-size: 0.95em;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-copy:hover { background: #3a56d4; }
+
+        .btn-generate {
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 28px;
+            font-size: 0.95em;
+            cursor: pointer;
+        }
+
+        .btn-generate:disabled { background: #ccc; cursor: not-allowed; }
+
+        .btn-next {
+            background: #198754;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 28px;
+            font-size: 0.95em;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .copied-msg {
+            color: #198754;
+            font-size: 0.85em;
+            margin-top: 8px;
+            display: none;
+        }
+
+        .error-msg {
+            color: #d9534f;
+            font-size: 0.85em;
+            margin-top: 10px;
+        }
+
+        .expires-msg {
+            color: #6c757d;
+            font-size: 0.82em;
+            margin-top: 6px;
+        }
+
+        .divider {
+            border-top: 1px solid #eee;
+            margin: 24px 0;
+        }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Generate Voting Token</h2>
+<div class="token-card">
+    <h2>🗳️ Voting Token</h2>
+    <p class="subtitle">Generate your one-time token to proceed to voting</p>
 
-    <div class="token-box">
+    <div class="token-box" id="tokenDisplay">
         {% if active_token %}
             {{ active_token.token }}
         {% else %}
@@ -29,22 +124,42 @@
         {% endif %}
     </div>
 
-    <form action="/token/generate_token" method="POST">
-        {% if active_token %}
-            <button type="submit" class="btn" disabled title="Wait until current token expires">Generate</button>
-            <p class="error">Active token exists. Please wait until it expires to generate a new one.</p>
-            <p><small>Expires at: {{ expired.strftime('%H:%M:%S') }} Bangladeshi Time</small></p>
+    {% if active_token %}
+        <button class="btn-copy" onclick="copyToken()">📋 Copy Token</button>
+        <div class="copied-msg" id="copiedMsg">✅ Copied to clipboard!</div>
 
-            <div>
-                <a href="{{ url_for('vote_flow.vote_cast_page') }}" class="btn next-btn">
-                    Next
-                </a>
-            </div>
-        {% else %}
-            <button type="submit" class="btn">Generate</button>
-        {% endif %}
-    </form>
+        <div class="divider"></div>
+
+        <form action="/token/generate_token" method="POST">
+            <button type="submit" class="btn-generate" disabled title="Wait until current token expires">Generate New</button>
+        </form>
+        <p class="error-msg">Active token exists. Wait until it expires to generate a new one.</p>
+        <p class="expires-msg">⏰ Expires at: {{ expired.strftime('%H:%M:%S') }} Bangladeshi Time</p>
+
+        <div class="mt-3">
+            <a href="{{ url_for('vote_flow.vote_cast_page') }}" class="btn-next">Next →</a>
+        </div>
+
+    {% else %}
+        <form action="/token/generate_token" method="POST">
+            <button type="submit" class="btn-generate">Generate Token</button>
+        </form>
+    {% endif %}
 </div>
+
+<script>
+    function copyToken() {
+        const tokenText = document.getElementById("tokenDisplay").innerText.trim();
+
+        navigator.clipboard.writeText(tokenText).then(function() {
+            document.getElementById("copiedMsg").style.display = "block";
+
+            setTimeout(function() {
+                document.getElementById("copiedMsg").style.display = "none";
+            }, 2000);
+        });
+    }
+</script>
 
 </body>
 </html>
