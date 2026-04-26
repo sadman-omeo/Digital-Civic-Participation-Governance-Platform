@@ -24,10 +24,20 @@
                         <label class="form-label">Election Title</label>
                         <input type="text" class="form-control" name="title" placeholder="Enter election title" required>
                     </div>
+                        
 
                     <div class="mb-3">
                         <label class="form-label">Description</label>
                         <textarea class="form-control" name="description" rows="3" placeholder="Enter election description" required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Election Type</label>
+                        <select class="form-select" name="type" required>
+                            <option value="Local">Local</option>
+                            <option value="national">National</option>
+                            <option value="mayor">Mayor</option>
+                        </select>
                     </div>
 
                     <div class="mb-3">
@@ -96,6 +106,7 @@
                                     <th>ID</th>
                                     <th>Title</th>
                                     <th>Description</th>
+                                    <th>Type </th>
                                     <th>Start Time</th> <!-- added -->
                                     <th>Action</th> <!-- added -->
                                     <th>Deadline</th>
@@ -107,16 +118,20 @@
                                         <td>{{ election.id }}</td>
                                         <td>{{ election.title }}</td>
                                         <td>{{ election.description }}</td>
+                                        <td>{{ election.type }}
                                         <td>{{ election.start_time }}</td> <!-- added -->
-                                        <td> 
+                                        <td>
+                                            <a href="{{ url_for('e_bp.edit_election', election_id=election.id) }}" class="btn btn-sm btn-warning mb-1">Edit</a>
+
                                             {% if election.result_published %}
-                                                <span class="badge bg-success">Published</span>
+                                                <span class="badge bg-success d-block mt-1">Published</span>
                                             {% else %}
-                                                <form action="{{ url_for('e_bp.publish_result', election_id=election.id) }}" method="POST">
+                                                <form action="{{ url_for('e_bp.publish_result', election_id=election.id) }}" method="POST" class="mt-1">
                                                     <button type="submit" class="btn btn-sm btn-success">Publish Result</button>
                                                 </form>
-                                            {% endif %}
+                                                {% endif %}
                                         </td> <!-- added -->
+                                        
                                         <td>{{ election.deadline }}</td>
                                     </tr>
                                 {% endfor %}

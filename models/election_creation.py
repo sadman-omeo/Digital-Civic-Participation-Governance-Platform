@@ -1,4 +1,3 @@
-# models/election_creation.py
 from database_init import db
 
 class ElectionCreation(db.Model):
@@ -7,6 +6,9 @@ class ElectionCreation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.String(500), nullable=False)
+    
+    type = db.Column(db.String(50), nullable = False, default = "Local")
+
     start_time = db.Column(db.String(50), nullable=False)  # added for election start reminder
     deadline = db.Column(db.String(50), nullable=False)
     result_published = db.Column(db.Boolean, default=False, nullable=False)  # added for result published notification
