@@ -1,0 +1,48 @@
+:root {
+    --primary-blue: #007bff;
+    --hover-blue: #0056b3;
+}
+
+body {
+    background-color: #ffffff;
+    color: #000000;
+    font-family: 'Segoe UI', sans-serif;
+}
+
+/* The main container for the table */
+.voter-container {
+    background: #ffffff;
+    border: 2px solid var(--primary-blue);
+    border-radius: 10px;
+    padding: 25px;
+    margin-top: 30px;
+}
+
+/* Blue themed buttons */
+.btn-blue {
+    background-color: var(--primary-blue);
+    color: white;
+    border: 1px solid var(--primary-blue);
+    transition: 0.3s;
+}
+
+.btn-blue:hover {
+    background-color: var(--hover-blue);
+    color: white;
+}
+
+/* White background buttons with blue borders for secondary actions */
+.btn-outline-blue {
+    background-color: #ffffff;
+    color: var(--primary-blue);
+    border: 1px solid var(--primary-blue);
+}
+
+.btn-outline-blue:hover {
+    background-color: var(--primary-blue);
+    color: white;
+}
+
+.search-input {
+    border: 2px solid var(--primary-blue);
+}

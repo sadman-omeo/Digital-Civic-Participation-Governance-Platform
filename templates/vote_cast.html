@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
+
+<div class="container">
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <h3 class="mb-3">Cast Your Vote</h3>
+
+            <div class="mb-4">
+                <h5 class="mb-1">{{ election.title }}</h5>
+                <p class="text-muted mb-1">{{ election.description }}</p>
+                <p class="mb-0"><strong>Deadline:</strong> {{ election.deadline }}</p>
+            </div>
+
+            {% if success_message %}
+                <div class="alert alert-success">
+                    {{ success_message }}
+                </div>
+            {% else %}
+                <form method="POST" action="{{ url_for('vote_flow.submit_vote') }}" id="voteForm"> <!-- changed -->
+                    <input type="hidden" name="voter_ip" id="voter_ip" value=""> <!-- added -->
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select Candidate</label>
+
+                        {% for option in options %}
+                            <div class="form-check mb-2">
+                                <input
+                                    class="form-check-input"
+                                    type="radio"
+                                    name="candidate_id"
+                                    value="{{ option.id }}"
+                                    id="candidate_{{ option.id }}"
+                                    required
+                                >
+                                <label class="form-check-label" for="candidate_{{ option.id }}">
+                                    {{ option.option_text }}
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Paste Your Token</label>
+                        <input
+                            type="text"
+                            name="token"
+                            class="form-control"
+                            placeholder="Paste the token you copied"
+                            required
+                        >
+                    </div>
+                    
+                    <!-- Jeisa Recaptcha -->
+                    <div class="g-recaptcha mb-3" data-sitekey="{{ recaptcha_site_key }}"></div>
+                    <!-- Jesia recaptcha -->
+
+                    <button type="submit" class="btn btn-success">
+                        Confirm Vote
+                    </button>
+                </form>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    fetch("https://api.ipify.org?format=json")
+        .then(response => response.json())
+        .then(data => {
+            document.getElementById("voter_ip").value = data.ip;
+        })
+        .catch(() => {
+            document.getElementById("voter_ip").value = "unknown";
+        });
+</script>
+
+{% endblock %}

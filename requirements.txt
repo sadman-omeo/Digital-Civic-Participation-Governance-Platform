@@ -1,0 +1,8 @@
+Flask
+Flask-SQLAlchemy
+SQLAlchemy
+Werkzeug
+python-dotenv
+requests
+matplotlib
+reportlab
