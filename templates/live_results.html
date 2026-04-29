@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card card-smooth p-4">
+            <h1 class="section-title mb-2">Live Results</h1>
+            <p class="page-intro mb-0">
+                Admin-only real-time vote monitoring page.
+            </p>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card card-smooth">
+            <div class="card-body p-4">
+                <div class="row g-3 align-items-end">
+                    <div class="col-md-8">
+                        <label class="form-label">Select Election</label>
+                        <select id="electionSelect" class="form-select">
+                            <option value="">Select an election</option>
+                            {% for election in elections %}
+                                <option value="{{ election.id }}">{{ election.title }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12">
+        <div class="card card-smooth">
+            <div class="card-body p-4">
+                <h4 id="liveElectionTitle" class="mb-4">No election selected</h4>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>Candidate / Option</th>
+                                <th>Live Votes</th>
+                            </tr>
+                        </thead>
+                        <tbody id="liveResultsBody">
+                            <tr>
+                                <td colspan="3" class="text-center text-muted">Select an election to view live results.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div id="liveStatus" class="mt-3 text-muted"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+    const socket = io();
+    let currentElectionId = null;
+
+    async function loadElectionData(electionId) {
+        if (!electionId) return;
+
+        const res = await fetch(`/results/api/election/${electionId}`);
+        const data = await res.json();
+
+        if (!res.ok) {
+            document.getElementById("liveElectionTitle").textContent = "Unable to load results";
+            document.getElementById("liveResultsBody").innerHTML = `
+                <tr><td colspan="3" class="text-center text-danger">Could not load election data.</td></tr>
+            `;
+            return;
+        }
+
+        currentElectionId = data.id;
+        document.getElementById("liveElectionTitle").textContent = `Live Results: ${data.title}`;
+
+        const tbody = document.getElementById("liveResultsBody");
+        tbody.innerHTML = "";
+
+        if (!data.options.length) {
+            tbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">No options found.</td></tr>`;
+            return;
+        }
+
+        data.options.forEach((option, index) => {
+            tbody.innerHTML += `
+                <tr id="row-option-${option.id}">
+                    <td>${index + 1}</td>
+                    <td>${option.name}</td>
+                    <td id="votes-${option.id}">${option.votes}</td>
+                </tr>
+            `;
+        });
+    }
+
+    document.getElementById("electionSelect").addEventListener("change", function () {
+        const electionId = this.value;
+        loadElectionData(electionId);
+    });
+
+    socket.on("vote_update", function (data) {
+        if (!currentElectionId) return;
+        if (parseInt(currentElectionId) !== parseInt(data.election_id)) return;
+
+        const voteCell = document.getElementById(`votes-${data.candidate_id}`);
+        if (voteCell) {
+            voteCell.textContent = data.new_count;
+            document.getElementById("liveStatus").textContent = "Live update received.";
+        }
+    });
+</script>
+{% endblock %}

@@ -7,13 +7,26 @@ import matplotlib
 matplotlib.use("Agg")
 from matplotlib.figure import Figure  # changed
 
-from flask import Blueprint, render_template, request, send_file, make_response
+from flask import Blueprint, render_template, request, send_file, make_response, jsonify, session, redirect, url_for
 from reportlab.lib.pagesizes import A4
 from reportlab.pdfgen import canvas
 
 from models.election_creation import ElectionCreation, VotingOption
+from models.voters import Voter  # added
 
 result_bp = Blueprint("result_bp", __name__, url_prefix="/results")
+
+def admin_only_guard():  # added
+    voter_id = session.get("user_id")
+    if not voter_id:
+        return None, redirect("/auth/login")
+
+    user = Voter.query.get(voter_id)
+    if not user or user.role != "admin":
+        return None, redirect("/dashboard")
+
+    return user, None
+
 
 chart_lock = Lock()  # added
 
@@ -223,3 +236,57 @@ def download_pdf(election_id):
         as_attachment=True,
         download_name=f"election_{election.id}_results.pdf"
     )
+
+
+
+@result_bp.route("/live")
+def live_results_page():  # added
+    user, blocked_response = admin_only_guard()
+    if blocked_response:
+        return blocked_response
+
+    elections = ElectionCreation.query.order_by(ElectionCreation.id.desc()).all()
+    return render_template("live_results.html", elections=elections)
+
+
+@result_bp.route("/api/elections")
+def live_results_elections_api():  # added
+    user, blocked_response = admin_only_guard()
+    if blocked_response:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    elections = ElectionCreation.query.order_by(ElectionCreation.id.desc()).all()
+
+    return jsonify([
+        {
+            "id": election.id,
+            "title": election.title
+        }
+        for election in elections
+    ])
+
+
+@result_bp.route("/api/election/<int:election_id>")
+def live_results_single_election_api(election_id):  # added
+    user, blocked_response = admin_only_guard()
+    if blocked_response:
+        return jsonify({"error": "Unauthorized"}), 403
+
+    election = ElectionCreation.query.get(election_id)
+    if not election:
+        return jsonify({"error": "Election not found"}), 404
+
+    options = VotingOption.query.filter_by(election_id=election_id).all()
+
+    return jsonify({
+        "id": election.id,
+        "title": election.title,
+        "options": [
+            {
+                "id": option.id,
+                "name": option.option_text,
+                "votes": option.vote_count
+            }
+            for option in options
+        ]
+    })
