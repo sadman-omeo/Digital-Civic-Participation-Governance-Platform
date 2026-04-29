@@ -12,6 +12,8 @@ from models.vote_tokens import VoteToken
 from models.voters import Voter
 from models.audit_log import AuditLog  # added from Syed
 
+from extensions import socketio  # added
+
 vote_flow_bp = Blueprint("vote_flow", __name__, url_prefix="/vote")
 
 ################### To Delete part ######################
@@ -258,91 +260,6 @@ def vote_cast_page():
         options=election.options,
         recaptcha_site_key=os.getenv("RECAPTCHA_SITE_KEY")
     )
-    ########## jesia recaptcha end ############
-
-# @vote_flow_bp.route("/submit", methods=["POST"])
-# def submit_vote():
-#     voter_id = session.get("user_id")
-#     if not voter_id:
-#         return redirect("/auth/login")
-
-#     voter = Voter.query.get(voter_id)
-#     if not voter:
-#         return "Voter not found", 404
-
-#     if voter.has_voted:
-#         return "You have already voted.", 400
-
-#     election_id = session.get("selected_election_id")
-#     if not election_id:
-#         return redirect(url_for("vote_flow.election_select"))
-
-#     election = ElectionCreation.query.get(election_id)
-#     if not election:
-#         return "Election not found", 404
-
-#     # deadline = parse_deadline(election.deadline)
-#     # if not deadline or deadline <= datetime.now():
-#     #     return "This election is no longer active.", 400
-#     ### new ###
-#     if is_election_locked(election):
-#         return redirect(url_for("vote_flow.election_closed_page"))
-#     ### new ###
-#     ######### jesia recaptcha ##########
-#     recaptcha_response = request.form.get("g-recaptcha-response")
-#     if not verify_recaptcha(recaptcha_response):
-#         return "reCAPTCHA verification failed. Please try again.", 400
-#     ####### Jesia rercaptcha #############
-
-
-#     option_id = request.form.get("candidate_id", type=int)
-#     token_value = request.form.get("token", "").strip()
-
-#     if not option_id:
-#         return "Please select a candidate.", 400
-
-#     if not token_value:
-#         return "Please enter your token.", 400
-
-#     selected_option = VotingOption.query.filter_by(
-#         id=option_id,
-#         election_id=election.id
-#     ).first()
-
-#     if not selected_option:
-#         return "Invalid candidate selection.", 400
-
-#     token_obj = VoteToken.query.filter_by(
-#         token=token_value,
-#         voter_id=voter_id,
-#         used=False
-#     ).first()
-
-#     if not token_obj:
-#         return "Invalid token.", 400
-
-#     if token_obj.expires_at:
-#         expires_at = token_obj.expires_at
-#         if expires_at.tzinfo is None:
-#             expires_at = expires_at.replace(tzinfo=timezone.utc)
-
-#         if expires_at <= datetime.now(timezone.utc):
-#             return "Token expired.", 400
-
-#     selected_option.vote_count += 1
-#     voter.has_voted = True
-
-#     db.session.delete(token_obj)
-#     db.session.commit()
-
-#     session["last_vote_candidate"] = selected_option.option_text
-#     session["last_vote_election"] = election.title
-
-#     return redirect("/vote/i-voted")
-
-
-############### NEW Submit merging JESIA + ABTOAHY
-
 
 
 
@@ -430,6 +347,18 @@ def submit_vote():
     db.session.delete(token_obj)
     db.session.commit()
 
+   
+    try:  # added
+        socketio.emit("vote_update", {  # added
+            "election_id": election.id,  # added
+            "candidate_id": selected_option.id,  # added
+            "new_count": selected_option.vote_count  # added
+        })  # added
+    except Exception:  # added
+        pass  # added
+    
+   
+    
     log_vote(voter_id, election_id, selected_option.id, ip, "success")
     check_and_cancel_if_ip_limit_exceeded(ip, election_id)
 

@@ -8,6 +8,8 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text
 from database_init import db
 import os
+from extensions import socketio  # added
+
 
 app = Flask(__name__)
 
@@ -18,6 +20,7 @@ app.secret_key = "digital_civic_secret"
 app.config["UPLOAD_FOLDER"] = "static/uploads"
 
 db.init_app(app)
+socketio.init_app(app)  # added
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 #db = SQLAlchemy(app)
 
@@ -134,4 +137,4 @@ with app.app_context():
 
 # Run the App
 if __name__ == "__main__":
-    app.run(debug=True, port = 1234)
+    socketio.run(app, debug=True, port=1234)

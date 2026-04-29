@@ -30,7 +30,7 @@ def add_election():
     if not title or not description or not start_time or not deadline:  # changed
         return "Title, description, start time, and deadline are required", 400  # changed
 
-    if type not in ["local", "national", "mayor"]:
+    if type not in ["Local", "national", "mayor"]:
         return "Invalid election type", 400
 
     if not option1 or not option2:
