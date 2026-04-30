@@ -1,0 +1,9 @@
+Flask
+Flask-SQLAlchemy
+SQLAlchemy
+opencv-python
+Flask-SocketIO
+eventlet
+qrcode
+Pillow
+numpy

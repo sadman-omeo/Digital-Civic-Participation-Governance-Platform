@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up | Blue Theme</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="/static/login.css">
+</head>
+<body class="d-flex align-items-center min-vh-100">
+
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-5">
+                <div class="auth-card">
+                    <h2 class="text-center mb-4">Create Account</h2>
+                                        <form id="signupForm" enctype="multipart/form-data">
+                                                {% with messages = get_flashed_messages() %}
+                                                    {% if messages %}
+                                                        <div class="alert alert-warning">{{ messages[0] }}</div>
+                                                    {% endif %}
+                                                {% endwith %}
+                        <div class="mb-3">
+                            <label class="form-label">NID</label>
+                            <input type="text" class="form-control" name="nid" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Name</label>
+                            <input type="text" class="form-control" name="name" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Phone</label>
+                            <input type="tel" class="form-control" name="phone" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Password</label>
+                            <input type="password" class="form-control" name="password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Upload Reference Photo (for face verification)</label>
+                            <input id="refPhoto" type="file" class="form-control" name="photo" accept="image/*" required>
+                        </div>
+                        <div class="mb-3 d-grid">
+                            <button id="startBtn" type="button" class="btn btn-primary">Start Camera & Verify</button>
+                        </div>
+
+                        <div id="verificationArea" style="display:none;">
+                            <div class="mb-3">
+                                <label class="form-label">Camera Preview</label>
+                                <video id="video" width="320" height="240" autoplay muted playsinline style="border:1px solid #ddd;background:#000;width:100%;height:auto"></video>
+                                <canvas id="canvas" width="320" height="240" style="display:none"></canvas>
+                            </div>
+                            <div class="mb-3">
+                                <div id="verifyStatus" class="alert alert-info">Looking for a face...</div>
+                            </div>
+                            <div class="mb-3 d-flex gap-2">
+                                <button id="completeBtn" type="button" class="btn btn-success" disabled>Complete Signup</button>
+                                <button id="cancelBtn" type="button" class="btn btn-outline-secondary">Cancel</button>
+                            </div>
+                        </div>
+                    </form>
+                    <p class="text-center mt-3">
+                        Already have an account? <a href="/auth/login" class="auth-link">Login</a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    const startBtn = document.getElementById('startBtn');
+    const completeBtn = document.getElementById('completeBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const verificationArea = document.getElementById('verificationArea');
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const verifyStatus = document.getElementById('verifyStatus');
+
+    let stream = null;
+    let scanInterval = null;
+
+    async function startSignupFlow(){
+        const form = document.getElementById('signupForm');
+        const fd = new FormData(form);
+
+        startBtn.disabled = true;
+        startBtn.textContent = 'Uploading reference...';
+
+        try{
+            const res = await fetch('/auth/start_signup', { method: 'POST', body: fd });
+            const data = await res.json();
+            if (!res.ok || !data.success){
+                alert(data.error || 'Failed to start signup');
+                startBtn.disabled = false;
+                startBtn.textContent = 'Start Camera & Verify';
+                return;
+            }
+
+            // show camera UI
+            verificationArea.style.display = 'block';
+            verifyStatus.textContent = 'Starting camera...';
+
+            stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+            video.srcObject = stream;
+            await video.play();
+
+            verifyStatus.textContent = 'Scanning for a matching face...';
+
+            // start sending frames every 1.2s
+            scanInterval = setInterval(async ()=>{
+                try{
+                    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+                    const blob = await new Promise(res=> canvas.toBlob(res, 'image/jpeg'));
+                    const fdata = new FormData();
+                    fdata.append('frame', blob, 'frame.jpg');
+                    const r = await fetch('/auth/verify_frame', { method: 'POST', body: fdata });
+                    const j = await r.json();
+                    if (r.ok && j.success){
+                        if (j.match){
+                            verifyStatus.className = 'alert alert-success';
+                            verifyStatus.textContent = 'Face matched ✓';
+                            clearInterval(scanInterval);
+                            completeBtn.disabled = false;
+                        } else {
+                            // keep scanning
+                            verifyStatus.className = 'alert alert-warning';
+                            verifyStatus.textContent = 'No match yet (distance: ' + (j.distance===null? 'n/a': j.distance.toFixed(3)) + ')';
+                        }
+                    } else {
+                        verifyStatus.className = 'alert alert-danger';
+                        verifyStatus.textContent = j.error || 'Verification error';
+                    }
+                } catch (err){
+                    console.error(err);
+                    verifyStatus.className = 'alert alert-danger';
+                    verifyStatus.textContent = 'Error capturing or sending frame';
+                }
+            }, 1200);
+
+        } catch (err){
+            console.error(err);
+            alert('Failed to start signup');
+            startBtn.disabled = false;
+            startBtn.textContent = 'Start Camera & Verify';
+        }
+    }
+
+    async function completeSignup(){
+        completeBtn.disabled = true;
+        completeBtn.textContent = 'Completing...';
+        try{
+            const res = await fetch('/auth/complete_signup', { method: 'POST' });
+            const j = await res.json();
+            if (res.ok && j.success){
+                window.location = j.redirect || '/';
+            } else {
+                alert(j.error || 'Failed to complete signup');
+                completeBtn.disabled = false;
+                completeBtn.textContent = 'Complete Signup';
+            }
+        } catch (err){
+            console.error(err);
+            alert('Failed to complete signup');
+            completeBtn.disabled = false;
+            completeBtn.textContent = 'Complete Signup';
+        }
+    }
+
+    function stopCamera(){
+        if (scanInterval) clearInterval(scanInterval);
+        if (stream){
+            stream.getTracks().forEach(t=>t.stop());
+            stream = null;
+        }
+        video.srcObject = null;
+        verificationArea.style.display = 'none';
+        startBtn.disabled = false;
+        startBtn.textContent = 'Start Camera & Verify';
+        verifyStatus.className = 'alert alert-info';
+        verifyStatus.textContent = 'Looking for a face...';
+    }
+
+    startBtn.addEventListener('click', (e)=> startSignupFlow());
+    completeBtn.addEventListener('click', ()=> completeSignup());
+    cancelBtn.addEventListener('click', ()=> stopCamera());
+});
+</script>
+
+</body>
+</html>

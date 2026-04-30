@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+  <div class="card">
+    <div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3 id="pageTitle">Live Results</h3>
+        <div>
+          <label class="form-label me-2">Election</label>
+          <select id="electionSelect" class="form-select d-inline-block" style="width:320px"></select>
+        </div>
+      </div>
+
+      <div id="summary" class="mb-3">
+        <strong>Total votes:</strong> <span id="totalVotes">0</span>
+      </div>
+
+      <div id="optionsArea">
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Candidate / Option</th>
+              <th>Votes</th>
+            </tr>
+          </thead>
+          <tbody id="optionsTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+(async function(){
+  const select = document.getElementById('electionSelect');
+  const optionsTbody = document.getElementById('optionsTbody');
+  const totalVotesEl = document.getElementById('totalVotes');
+  const pageTitle = document.getElementById('pageTitle');
+
+  let elections = [];
+  let selectedElection = null;
+
+  async function loadElections(){
+    const res = await fetch('/results/api/elections');
+    if (!res.ok) return;
+    const j = await res.json();
+    select.innerHTML = '';
+    if (j && j.success && Array.isArray(j.elections)){
+      j.elections.forEach(e=>{
+        const o = document.createElement('option');
+        o.value = e.id;
+        o.textContent = e.title;
+        select.appendChild(o);
+      });
+    }
+
+    if (select.options.length > 0){
+      selectedElection = parseInt(select.value, 10);
+      await loadElectionData(selectedElection);
+    }
+  }
+
+  async function loadElectionData(electionId){
+    if (!electionId) return;
+    const res = await fetch(`/results/api/election/${electionId}`);
+    if (!res.ok) return;
+    const j = await res.json();
+    if (!j.success) return;
+
+    pageTitle.textContent = 'Live Results - ' + j.election.title;
+    totalVotesEl.textContent = j.total_votes;
+
+    optionsTbody.innerHTML = '';
+    j.options.forEach((opt, idx)=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${idx+1}</td>
+        <td>${opt.text}</td>
+        <td id="opt-${opt.id}-votes">${opt.votes}</td>
+      `;
+      optionsTbody.appendChild(tr);
+    });
+  }
+
+  select.addEventListener('change', async ()=>{
+    selectedElection = parseInt(select.value, 10);
+    await loadElectionData(selectedElection);
+  });
+
+  await loadElections();
+
+  // SocketIO realtime updates
+  try{
+    const socket = io();
+    socket.on('connect', ()=> console.log('socket connected'));
+    socket.on('vote_update', async function(data){
+      try{
+        if (!data || !selectedElection) return;
+        if (parseInt(data.election_id,10) !== parseInt(selectedElection,10)) return;
+        // refresh snapshot for accuracy
+        await loadElectionData(selectedElection);
+      }catch(e){ console.error(e); }
+    });
+  }catch(e){ console.warn('SocketIO unavailable', e); }
+
+})();
+</script>
+{% endblock %}

@@ -1,0 +1,298 @@
+{% extends "base.html" %}
+
+{% block content %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/i_voted.css') }}"/>
+
+<div class="sticker-page">
+    <div class="sticker-header">
+        <h1>I Voted</h1>
+        <p>Your vote has been recorded successfully.</p>
+    </div>
+
+    <div class="sticker-section">
+        <div class="sticker-container">
+            <div class="sticker" id="stickerSVG">Loading sticker...</div>
+
+            <h2 id="stickerTitle">I Voted! 🎉</h2>
+            <p id="stickerCaption"></p>
+
+            <div class="vote-info">
+                <div class="info-card">
+                    <span class="label">Election</span>
+                    <span class="value" id="electionTitle">{{ election_title }}</span>
+                </div>
+                <div class="info-card">
+                    <span class="label">Selected Candidate</span>
+                    <span class="value" id="candidateName">{{ candidate_name }}</span>
+                </div>
+            </div>
+
+            <div class="share-buttons">
+                <a id="twitterShare" href="#" target="_blank" class="btn btn-twitter">Share on Twitter</a>
+                <a id="facebookShare" href="#" target="_blank" class="btn btn-facebook">Share on Facebook</a>
+                <button class="btn btn-primary" onclick="downloadSticker()">Download Sticker</button>
+                <button class="btn btn-warning" onclick="openEditModal()">Edit Vote Information</button>
+            </div>
+
+            {% if qr_url %}
+            <div class="qr-section mt-3 text-center">
+                <h5>Your Vote Receipt (QR Code)</h5>
+                <img src="{{ qr_url }}" alt="Vote QR" style="width:220px;height:220px;border:1px solid #ddd;padding:8px;background:white"/>
+                <div class="mt-2">
+                    <a href="{{ qr_url }}" download class="btn btn-outline-primary">Download QR</a>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="vote-again-msg">
+                <p>Encourage others to participate too. Share your sticker proudly.</p>
+                <a href="/" class="btn btn-home">Back to Home</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Vote Information Modal -->
+<div id="editModal" class="modal" style="display:none;">
+    <div class="modal-content">
+        <span class="close-btn" onclick="closeEditModal()">&times;</span>
+        <h2>Edit Vote Information</h2>
+        <form id="editForm">
+            <div class="form-group">
+                <label for="editCandidateName">Candidate Name:</label>
+                <input type="text" id="editCandidateName" name="candidateName" required placeholder="Enter candidate name">
+            </div>
+            <div class="form-group">
+                <label for="editElectionTitle">Election Title:</label>
+                <input type="text" id="editElectionTitle" name="electionTitle" required placeholder="Enter election title">
+            </div>
+            <div class="form-group">
+                <label for="editNotes">Additional Notes:</label>
+                <textarea id="editNotes" name="notes" placeholder="Add any notes about your vote"></textarea>
+            </div>
+            <div class="modal-buttons">
+                <button type="submit" class="btn btn-success">Save Changes</button>
+                <button type="button" class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<style>
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto;
+    padding: 30px;
+    border: 1px solid #888;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 500px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.close-btn {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-btn:hover {
+    color: black;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #333;
+}
+
+.form-group input,
+.form-group textarea {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 14px;
+    box-sizing: border-box;
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn-success {
+    background-color: #28a745;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.btn-success:hover {
+    background-color: #218838;
+}
+
+.btn-secondary {
+    background-color: #6c757d;
+    color: white;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    flex: 1;
+}
+
+.btn-secondary:hover {
+    background-color: #5a6268;
+}
+
+.btn-warning {
+    background-color: #ffc107;
+    color: black;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.btn-warning:hover {
+    background-color: #e0a800;
+}
+</style>
+
+<script>
+async function loadSticker() {
+    try {
+        const res = await fetch("/vote/sticker-data");
+        const data = await res.json();
+
+        if (!res.ok) {
+            document.getElementById("stickerSVG").innerHTML = "<p>Could not load sticker.</p>";
+            return;
+        }
+
+        document.getElementById("stickerSVG").innerHTML = data.sticker_svg;
+        document.getElementById("stickerTitle").textContent = data.sticker_title;
+        document.getElementById("stickerCaption").textContent = data.share_caption;
+        document.getElementById("twitterShare").href = data.social_links.twitter;
+        document.getElementById("facebookShare").href = data.social_links.facebook;
+        document.getElementById("electionTitle").textContent = data.election_title;
+        document.getElementById("candidateName").textContent = data.candidate_name;
+    } catch (error) {
+        document.getElementById("stickerSVG").innerHTML = "<p>Network error while loading sticker.</p>";
+    }
+}
+
+function downloadSticker() {
+    const svgEl = document.querySelector("#stickerSVG svg");
+    if (!svgEl) return;
+
+    const blob = new Blob([svgEl.outerHTML], { type: "image/svg+xml" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "I_Voted_Sticker.svg";
+    a.click();
+
+    URL.revokeObjectURL(url);
+}
+
+function openEditModal() {
+    // Pre-populate the modal with current values
+    document.getElementById("editCandidateName").value = document.getElementById("candidateName").textContent;
+    document.getElementById("editElectionTitle").value = document.getElementById("electionTitle").textContent;
+    document.getElementById("editModal").style.display = "block";
+}
+
+function closeEditModal() {
+    document.getElementById("editModal").style.display = "none";
+}
+
+// Close modal when clicking outside of it
+window.onclick = function(event) {
+    const modal = document.getElementById("editModal");
+    if (event.target == modal) {
+        modal.style.display = "none";
+    }
+}
+
+// Handle form submission
+document.getElementById("editForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    
+    const candidateName = document.getElementById("editCandidateName").value.trim();
+    const electionTitle = document.getElementById("editElectionTitle").value.trim();
+    const notes = document.getElementById("editNotes").value.trim();
+    
+    if (!candidateName || !electionTitle) {
+        alert("Please fill in all required fields");
+        return;
+    }
+    
+    try {
+        const response = await fetch("/vote/edit-vote", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                candidateName: candidateName,
+                electionTitle: electionTitle,
+                notes: notes
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (!response.ok) {
+            alert("Error: " + (data.error || "Failed to save changes"));
+            return;
+        }
+        
+        // Update the displayed values
+        document.getElementById("candidateName").textContent = candidateName;
+        document.getElementById("electionTitle").textContent = electionTitle;
+        
+        // Update the sticker
+        loadSticker();
+        
+        // Close the modal
+        closeEditModal();
+        alert("Vote information updated successfully!");
+        
+    } catch (error) {
+        console.error("Error:", error);
+        alert("An error occurred while saving changes");
+    }
+});
+
+loadSticker();
+</script>
+{% endblock %}

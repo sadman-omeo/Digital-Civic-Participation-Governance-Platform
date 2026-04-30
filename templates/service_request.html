@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="row g-4">
+    <div class="col-12">
+        <div class="card card-smooth p-4 mb-4">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-start gap-3">
+                <div>
+                    <h1 class="section-title mb-2">Service Requests</h1>
+                    <p class="page-intro">Submit citizen service requests and review pending requests from one clean interface.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card card-smooth">
+            <div class="card-body p-4">
+                <h3 class="mb-4">Submit a Service Request</h3>
+
+                <form action="{{ url_for('s_bp.add_service_request') }}" method="POST">
+                    <div class="mb-3">
+                        <label class="form-label">Citizen Name</label>
+                        <input type="text" class="form-control mb-3" name="citizen_name" required>
+
+                        <label class="form-label">Citizen Email</label>
+                        <input type="email" class="form-control" name="citizen_email" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Service Type</label>
+                        <select class="form-select" name="service_type" required>
+                            <option value="">Select a service</option>
+                            <option>Birth Certificate</option>
+                            <option>National ID Application</option>
+                            <option>Trade License</option>
+                            <option>Tax Clearance</option>
+                            <option>National ID Correction</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        <textarea class="form-control" name="description" rows="4" required></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100">Submit Request</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-7">
+        <div class="card card-smooth">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h3 class="mb-0">Submitted Requests</h3>
+                    <span class="badge bg-primary">{{ requests|length }} Requests</span>
+                </div>
+
+                {% if requests %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Name</th>
+                                    <th>Email</th>
+                                    <th>Service</th>
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for req in requests %}
+                                    <tr>
+                                        <td>{{ req.id }}</td>
+                                        <td>{{ req.citizen_name }}</td>
+                                        <td>{{ req.citizen_email }}</td>
+                                        <td>{{ req.service_type }}</td>
+                                        <td>{{ req.description }}</td>
+                                        <td>{{ req.status }}</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="alert alert-secondary text-center mb-0">No service requests submitted yet.</div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
