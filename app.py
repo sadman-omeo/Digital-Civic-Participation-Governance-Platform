@@ -9,6 +9,13 @@ from sqlalchemy import text
 from database_init import db
 import os
 from extensions import socketio
+from dotenv import load_dotenv
+
+# Load environment variables from .env if present
+load_dotenv()
+
+import logging
+logging.basicConfig(level=logging.INFO)
 
 app = Flask(__name__)
 
@@ -22,6 +29,18 @@ db.init_app(app)
 os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
 # initialize socketio with the flask app
 socketio.init_app(app)
+# log presence of key config (do not print secrets)
+import logging
+logger = logging.getLogger(__name__)
+if os.getenv('RECAPTCHA_SECRET_KEY'):
+    logger.info('reCAPTCHA secret configured')
+else:
+    logger.info('reCAPTCHA secret not configured; set RECAPTCHA_SECRET_KEY or enable RECAPTCHA_DISABLED for local testing')
+
+if os.getenv('GROQ_API_KEY') or os.getenv('groq_api'):
+    logger.info('Groq API key configured')
+else:
+    logger.info('Groq API key not configured; chatbot will use fallback responder')
 #db = SQLAlchemy(app)
 
 
@@ -114,4 +133,5 @@ with app.app_context():
 
 # Run the App
 if __name__ == "__main__":
-    socketio.run(app, debug=True, port=1234)
+    # Disable the auto-reloader for a single-process runtime during debugging
+    socketio.run(app, debug=False, port=1234, use_reloader=False)

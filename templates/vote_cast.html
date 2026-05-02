@@ -2,9 +2,11 @@
 
 {% block content %}
 
+{% if recaptcha_site_key %}
 <!-- Jesia recaptcha -->
-<script src="https://www.google.com/recaptcha/api.js" async defer></script>   
+<script src="https://www.google.com/recaptcha/api.js" async defer></script>
 <!-- Jesia recaptcha -->
+{% endif %}
 
 <div class="container">
     <div class="card shadow-sm border-0">
@@ -55,9 +57,11 @@
                     </div>
                     
                     
+                    {% if recaptcha_site_key %}
                     <!-- Jesia recaptcha -->
                     <div class="g-recaptcha mb-3" data-sitekey="{{ recaptcha_site_key }}"></div>
                     <!-- Jesia recaptcha -->
+                    {% endif %}
 
                     <button type="submit" class="btn btn-success">
                         Confirm Vote

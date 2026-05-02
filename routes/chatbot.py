@@ -8,8 +8,8 @@ from models.chatbot import ChatbotService, ChatModel
 # Initialize chatbot blueprint
 chat_bp = Blueprint('chat', __name__, url_prefix='/api/chat')
 
-# Initialize services
-chatbot_service = ChatbotService()
+# Initialize services (chatbot is lazily initialized per-process)
+chatbot_service = None
 chat_model = ChatModel()
 
 
@@ -40,6 +40,13 @@ def chat():
     # Get or create session
     session = chat_model.get_or_create_session(session_id)
     session_id = session.session_id
+
+    # Lazy-init chatbot_service in the request process if needed
+    global chatbot_service
+    if chatbot_service is None:
+        import logging
+        logging.getLogger(__name__).info('Initializing ChatbotService for request process')
+        chatbot_service = ChatbotService()
 
     # Get bot reply from AI chatbot
     bot_reply = chatbot_service.get_reply(user_message)

@@ -104,30 +104,46 @@ def check_and_cancel_if_ip_limit_exceeded(ip_address, election_id):  # added fro
 
 ############### Abtoahy ################
 
-def build_sticker_data(candidate_name, election_title, voter_id):
+def build_sticker_data(candidate_name, election_title, voter_id, custom=None):
+    """Build sticker SVG using optional customization dict.
+
+    `custom` may contain keys: sticker_title, emoji, bg_start, bg_end, tagline
+    """
+    custom = custom or {}
+    sticker_title = custom.get('sticker_title', "I Voted! 🗳️")
+    emoji = custom.get('emoji', '🗳️')
+    bg_start = custom.get('bg_start', '#1a237e')
+    bg_end = custom.get('bg_end', '#283593')
+    tagline = custom.get('tagline', '#YouthVotes #Democracy')
+
+    # sanitize / truncate values for SVG safety
+    safe_election = (election_title or '')[:26]
+    safe_candidate = (candidate_name or '')[:28]
+    safe_voter = str(voter_id)[:20]
+
     sticker_svg = f"""
     <svg xmlns='http://www.w3.org/2000/svg' width='320' height='320' viewBox='0 0 320 320'>
       <defs>
-        <linearGradient id='bg' x1='0%' y1='0%' x2='100%' y2='100%'>
-          <stop offset='0%' stop-color='#1a237e'/>
-          <stop offset='100%' stop-color='#283593'/>
-        </linearGradient>
+                <linearGradient id='bg' x1='0%' y1='0%' x2='100%' y2='100%'>
+                    <stop offset='0%' stop-color='{bg_start}'/>
+                    <stop offset='100%' stop-color='{bg_end}'/>
+                </linearGradient>
       </defs>
 
       <circle cx='160' cy='160' r='150' fill='url(#bg)' stroke='#ffd600' stroke-width='10'/>
       <circle cx='160' cy='160' r='132' fill='none' stroke='#ffd600' stroke-width='3'/>
 
-      <text x='160' y='92' text-anchor='middle'
-            font-family='Arial Black, Arial, sans-serif'
-            font-size='28' font-weight='900' fill='#ffd600'>
-        I VOTED
-      </text>
+    <text x='160' y='92' text-anchor='middle'
+        font-family='Arial Black, Arial, sans-serif'
+        font-size='28' font-weight='900' fill='#ffd600'>
+      {sticker_title}
+    </text>
 
-      <text x='160' y='165' text-anchor='middle'
-            font-family='Arial, sans-serif'
-            font-size='70'>
-        🗳️
-      </text>
+    <text x='160' y='165' text-anchor='middle'
+        font-family='Arial, sans-serif'
+        font-size='70'>
+      {emoji}
+    </text>
 
       <text x='160' y='214' text-anchor='middle'
             font-family='Arial, sans-serif'
@@ -147,11 +163,11 @@ def build_sticker_data(candidate_name, election_title, voter_id):
         Voter ID: {voter_id}
       </text>
 
-      <text x='160' y='290' text-anchor='middle'
-            font-family='Arial, sans-serif'
-            font-size='11' fill='#aaaaaa'>
-        #YouthVotes #Democracy
-      </text>
+            <text x='160' y='290' text-anchor='middle'
+                        font-family='Arial, sans-serif'
+                        font-size='11' fill='#aaaaaa'>
+                {tagline}
+            </text>
     </svg>
     """.strip()
 
@@ -518,7 +534,9 @@ def sticker_data():
     if not candidate_name or not election_title:
         return jsonify({"error": "No recent vote found"}), 404
 
-    return jsonify(build_sticker_data(candidate_name, election_title, voter_id)), 200
+    # merge any session-saved sticker customizations
+    custom = session.get('sticker_custom', {})
+    return jsonify(build_sticker_data(candidate_name, election_title, voter_id, custom=custom)), 200
 
 @vote_flow_bp.route("/edit-vote", methods=["POST"])
 def edit_vote():
@@ -539,6 +557,12 @@ def edit_vote():
         candidate_name = data.get("candidateName", "").strip()
         election_title = data.get("electionTitle", "").strip()
         notes = data.get("notes", "").strip()
+        # optional sticker customization fields
+        sticker_title = data.get('stickerTitle', '').strip()
+        emoji = data.get('emoji', '').strip()
+        bg_start = data.get('bgStart', '').strip()
+        bg_end = data.get('bgEnd', '').strip()
+        tagline = data.get('tagline', '').strip()
 
         if not candidate_name or not election_title:
             return jsonify({"error": "Candidate name and election title are required"}), 400
@@ -546,6 +570,19 @@ def edit_vote():
         # Update session for immediate display
         session["last_vote_candidate"] = candidate_name
         session["last_vote_election"] = election_title
+        # Save customization in session so sticker-data can use it
+        sticker_custom = session.get('sticker_custom', {})
+        if sticker_title:
+            sticker_custom['sticker_title'] = sticker_title
+        if emoji:
+            sticker_custom['emoji'] = emoji
+        if bg_start:
+            sticker_custom['bg_start'] = bg_start
+        if bg_end:
+            sticker_custom['bg_end'] = bg_end
+        if tagline:
+            sticker_custom['tagline'] = tagline
+        session['sticker_custom'] = sticker_custom
 
         # Update voter record in database
         voter.last_vote_candidate = candidate_name

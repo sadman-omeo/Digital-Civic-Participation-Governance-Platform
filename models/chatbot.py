@@ -42,10 +42,25 @@ Context:
 
     def __init__(self):
         """Initialize Groq client for chatbot."""
-        groq_api_key = os.getenv("groq_api")
+        # Support both `GROQ_API_KEY` (preferred) and legacy `groq_api`
+        groq_api_key = os.getenv("GROQ_API_KEY") or os.getenv("groq_api")
+        import logging
+        if groq_api_key:
+            logging.getLogger(__name__).info('GROQ API key found in environment')
         if not groq_api_key:
-            raise ValueError("GROQ_API_KEY not found in .env file")
-        self.client = Groq(api_key=groq_api_key)
+            # Fall back to a local dummy responder so the app can run without external credentials
+            import logging
+            logging.getLogger(__name__).warning("Groq API key not set; chatbot will use fallback responder")
+            self.client = None
+        else:
+            try:
+                self.client = Groq(api_key=groq_api_key)
+                import logging
+                logging.getLogger(__name__).info('Groq client created: %s', type(self.client))
+            except Exception as e:
+                import logging
+                logging.getLogger(__name__).exception('Failed to initialize Groq client: %s', e)
+                self.client = None
 
     def get_reply(self, user_message: str) -> str:
         """
@@ -57,7 +72,13 @@ Context:
         Returns:
             AI-generated response from the chatbot
         """
+        import logging
+        logging.getLogger(__name__).info('get_reply called; client is None=%s', self.client is None)
         try:
+            if self.client is None:
+                # Simple deterministic fallback reply
+                return "Thanks for your question — the AI assistant is not configured. Please try later or contact support."
+
             completion = self.client.chat.completions.create(
                 model="llama-3.3-70b-versatile",
                 messages=[
